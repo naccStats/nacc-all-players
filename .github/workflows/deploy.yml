@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
 
+  workflow_dispatch:   # ✅ add this
+
 permissions:
   contents: read
   pages: write
@@ -30,7 +32,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: build   # ✅ CRA output folder
+          path: build
 
   deploy:
     needs: build
