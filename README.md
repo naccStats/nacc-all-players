@@ -34,8 +34,6 @@ A data-driven React analytics platform displaying player and guild statistics pa
 | lucide-react | 0.400 | Icons |
 | papaparse | 5 | CSV parsing |
 
-Here’s a cleaner, more professional version for your `README.md`:
-
 ---
 
 ## ⚠️ Important: Updating Player Records
