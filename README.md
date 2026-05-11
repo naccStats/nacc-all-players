@@ -38,7 +38,7 @@ A data-driven React analytics platform displaying player and guild statistics pa
 
 ## ⚠️ Important: Updating Player Records
 
-To update the analytics data, you must re-upload the following CSV files:
+To update the analytics data, CSV files must be re-uploaded:
 
 ---
 
