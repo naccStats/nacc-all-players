@@ -2,6 +2,8 @@
 
 > Analytics dashboard for *Nobody's Adventure Chop Chop* (NA server).
 
+🌐 **Live Website:** https://naccstats.github.io/nacc-all-players/
+
 ---
 
 ## Overview
