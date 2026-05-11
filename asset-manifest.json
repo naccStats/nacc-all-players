@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/nacc-all-players/static/css/main.8fe08ed9.css",
-    "main.js": "/nacc-all-players/static/js/main.354130b6.js",
+    "main.js": "/nacc-all-players/static/js/main.74dc84ea.js",
     "index.html": "/nacc-all-players/index.html",
     "main.8fe08ed9.css.map": "/nacc-all-players/static/css/main.8fe08ed9.css.map",
-    "main.354130b6.js.map": "/nacc-all-players/static/js/main.354130b6.js.map"
+    "main.74dc84ea.js.map": "/nacc-all-players/static/js/main.74dc84ea.js.map"
   },
   "entrypoints": [
     "static/css/main.8fe08ed9.css",
-    "static/js/main.354130b6.js"
+    "static/js/main.74dc84ea.js"
   ]
 }
