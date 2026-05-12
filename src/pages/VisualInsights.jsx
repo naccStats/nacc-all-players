@@ -1,4 +1,5 @@
 import { useContext, useMemo, useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import Papa from 'papaparse';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
@@ -6,7 +7,7 @@ import { tribColor, tribLabel } from '../utils/tribulationSystem';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radar, Flame, Users, Zap } from 'lucide-react';
+import { Radar, Flame, Users, Zap, ScatterChart, BarChart2 } from 'lucide-react';
 
 const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
 const SL = { color: 'rgba(201,146,11,0.08)', type: 'dashed' };
@@ -170,19 +171,19 @@ export default function VisualInsights() {
                     }}>{i + 1}</span>
                     <span style={{ fontWeight: 600, fontSize: 11, color: '#EDE0C4', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player}</span>
                     <span style={{ fontSize: 9, color: tc, fontWeight: 600, flexShrink: 0 }}>{tribLabel(p.trib) || p.trib}</span>
-                    {hasC && <span style={{ fontSize: 9, color: '#FF3B2B', flexShrink: 0 }}>⚡{p.hasChaos}</span>}
+                    {hasC && <span style={{ fontSize: 9, color: '#CB4335', flexShrink: 0 }}>⚡{p.hasChaos}</span>}
                   </div>
                   {/* Row 2: stat grid 4 cols */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px 6px' }}>
                     {[
-                      { l: 'CP',      v: formatCP(p.cp),               c: '#C9920B' },
-                      { l: 'Finals',  v: p.totalFinals.toFixed(1),     c: '#FF3B2B' },
-                      { l: 'FDU',     v: p.fdu.toFixed(1),             c: '#B026FF' },
+                      { l: 'CP',      v: formatCP(p.cp),               c: '#D4A843' },
+                      { l: 'Finals',  v: p.totalFinals.toFixed(1),     c: '#CB4335' },
+                      { l: 'FDU',     v: p.fdu.toFixed(1),             c: '#9B59B6' },
                       { l: 'FDD',     v: p.fdd.toFixed(1),             c: '#FF8C42' },
-                      { l: 'Heal↑',   v: p.healUp.toFixed(1),          c: '#00E87C' },
-                      { l: 'Heal↓',   v: p.healDown.toFixed(1),        c: '#00E87C' },
-                      { l: 'Beast↑',  v: p.beastUp.toFixed(1),         c: '#00BFFF' },
-                      { l: 'Beast↓',  v: p.beastDown.toFixed(1),       c: '#00BFFF' },
+                      { l: 'Heal↑',   v: p.healUp.toFixed(1),          c: '#1EBD82' },
+                      { l: 'Heal↓',   v: p.healDown.toFixed(1),        c: '#1EBD82' },
+                      { l: 'Beast↑',  v: p.beastUp.toFixed(1),         c: '#2E9BE5' },
+                      { l: 'Beast↓',  v: p.beastDown.toFixed(1),       c: '#2E9BE5' },
                     ].map(({ l, v, c }) => (
                       <div key={l} style={{ display: 'flex', flexDirection: 'column' }}>
                         <span style={{ fontSize: 8, color: 'var(--muted)', letterSpacing: '0.08em' }}>{l}</span>
@@ -219,9 +220,9 @@ export default function VisualInsights() {
             const maxCP = insights.top5[0]?.cp || 1;
             const pct = (p.cp / maxCP) * 100;
             const barColor = i === 0
-              ? 'linear-gradient(90deg, #C9920B, #FF3B2B)'
+              ? 'linear-gradient(90deg, #D4A843, #CB4335)'
               : i < 3
-              ? 'linear-gradient(90deg, #00BFFF, #B026FF)'
+              ? 'linear-gradient(90deg, #2E9BE5, #9B59B6)'
               : 'linear-gradient(90deg, rgba(0,191,255,0.3), rgba(0,191,255,0.08))';
             return (
               <div key={p.uid} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -251,6 +252,28 @@ export default function VisualInsights() {
           })}
         </div>
       </GlassCard>
+
+      {/* ── Healers vs Fighters + Beast Efficiency (from topPlayers.csv) ── */}
+      {topPlayerRows.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <GlassCard variant="cyan">
+            <div className="flex items-center gap-2 mb-2">
+              <ScatterChart size={14} style={{ color: 'var(--azure-bright)' }} />
+              <h2 className="text-sm font-display font-bold gradient-text">Healers vs Fighters</h2>
+            </div>
+            <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 6 }}>X = Total Heal · Y = Total Beast · size = CP</div>
+            <ChartContainer option={healerFighterChart(topPlayerRows)} ratio={9 / 16} maxHeight={340} />
+          </GlassCard>
+
+          <GlassCard variant="gold">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart2 size={14} style={{ color: 'var(--gold-bright)' }} />
+              <h2 className="text-sm font-display font-bold gradient-text-gold">Beast Efficiency — Up vs Down</h2>
+            </div>
+            <ChartContainer option={beastEfficiencyChart(topPlayerRows)} ratio={9 / 16} maxHeight={340} />
+          </GlassCard>
+        </div>
+      )}
     </motion.div>
   );
 }
@@ -259,9 +282,9 @@ export default function VisualInsights() {
    Pure SVG responsive radar — no ECharts, no squeezing
    ───────────────────────────────────────────────────────────────────────── */
 const AXES = ['CP', 'Heal↑', 'Heal↓', 'FDU', 'FDD', 'Beast↑', 'Beast↓'];
-const RC = ['#C9920B','#00BFFF','#FF3B2B','#B026FF','#00E87C','#FF8C42','#6B8AFF','#EC4899','#14B8A6','#F59E0B'];
+const RC = ['#D4A843','#2E9BE5','#CB4335','#9B59B6','#1EBD82','#D4813A','#5D7FC2','#B03A8E','#17A272','#E8C46A'];
 // Per-axis accent colors for radar labels
-const AXIS_COLORS = ['#C9920B','#00E87C','#00E87C','#B026FF','#FF8C42','#00BFFF','#00BFFF'];
+const AXIS_COLORS = ['#D4A843','#1EBD82','#1EBD82','#9B59B6','#D4813A','#2E9BE5','#2E9BE5'];
 const SPLITS = 4;
 
 function polarToXY(angle, r) {
@@ -270,8 +293,35 @@ function polarToXY(angle, r) {
 
 function SvgRadar({ data }) {
   const wrapRef = useRef(null);
+  const chipRefs = useRef([]);
   const [size, setSize] = useState(300);
   const [hovered, setHovered] = useState(null);
+  const [popoverPos, setPopoverPos] = useState(null);
+
+  const POPOVER_W = 284;
+  const POPOVER_H = 160;
+
+  const calcPos = useCallback((rect) => {
+    if (window.innerWidth < 640) return { mobile: true };
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const above = spaceBelow < POPOVER_H + 10;
+    const top = above ? rect.top - POPOVER_H - 8 : rect.bottom + 6;
+    const idealLeft = rect.left + rect.width / 2 - POPOVER_W / 2;
+    const left = Math.max(8, Math.min(idealLeft, window.innerWidth - POPOVER_W - 8));
+    return { top, left, mobile: false };
+  }, []);
+
+  const openPopover = useCallback((si) => {
+    const el = chipRefs.current[si];
+    if (!el) return;
+    setHovered(si);
+    setPopoverPos(calcPos(el.getBoundingClientRect()));
+  }, [calcPos]);
+
+  const closePopover = useCallback(() => {
+    setHovered(null);
+    setPopoverPos(null);
+  }, []);
 
   const updateSize = useCallback(() => {
     if (wrapRef.current) {
@@ -396,7 +446,7 @@ function SvgRadar({ data }) {
 
       </svg>
 
-      {/* Player legend — hoverable chips below the SVG */}
+      {/* Player legend — hoverable chips, popover rendered via portal */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: '6px 10px',
         justifyContent: 'center', marginTop: 14, padding: '0 4px',
@@ -406,8 +456,14 @@ function SvgRadar({ data }) {
           return (
             <div
               key={si}
-              onMouseEnter={() => setHovered(si)}
-              onMouseLeave={() => setHovered(null)}
+              ref={el => { chipRefs.current[si] = el; }}
+              onMouseEnter={() => openPopover(si)}
+              onMouseLeave={closePopover}
+              onClick={() => {
+                if (window.matchMedia('(pointer: coarse)').matches || window.innerWidth < 640) {
+                  hovered === si ? closePopover() : openPopover(si);
+                }
+              }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 6,
                 padding: '4px 10px', borderRadius: 20,
@@ -438,61 +494,83 @@ function SvgRadar({ data }) {
         })}
       </div>
 
-      {/* Stat detail panel — shown when hovering, rendered below SVG so always visible */}
-      <AnimatePresence>
-        {hovered !== null && (() => {
-          const d = seriesPolygons[hovered].d;
-          const color = RC[hovered % RC.length];
-          const r = d.raw;
-          const hasC = d.hasChaos && d.hasChaos !== 'N' && d.hasChaos !== 'NO' && d.hasChaos !== '';
-          return (
-            <motion.div
-              key={hovered}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 6 }}
-              transition={{ duration: 0.18 }}
-              style={{
-                marginTop: 12,
-                background: 'rgba(8,4,18,0.97)',
-                border: `1px solid ${color}55`,
-                borderRadius: 10,
-                padding: '12px 14px',
-                boxShadow: `0 8px 32px rgba(0,0,0,0.6), 0 0 12px ${color}22`,
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-title)', fontSize: 14, fontWeight: 700, color }}>{d.name}</div>
-                  <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
-                    {d.guild || '—'} · <span style={{ color: tribColor(d.trib) }}>{tribLabel(d.trib) || d.trib}</span>
-                    {hasC && <span style={{ color: '#FF3B2B', marginLeft: 6 }}>⚡ {d.hasChaos}</span>}
+      {/* Portal popover — fixed-positioned, never clipped by any parent */}
+      {ReactDOM.createPortal(
+        <AnimatePresence>
+          {hovered !== null && popoverPos && (() => {
+            const d = seriesPolygons[hovered].d;
+            const color = RC[hovered % RC.length];
+            const raw = d.raw;
+            const hasC = d.hasChaos && d.hasChaos !== 'N' && d.hasChaos !== 'NO' && d.hasChaos !== '';
+            const isMobile = popoverPos.mobile;
+            return (
+              <motion.div
+                key={hovered}
+                initial={{ opacity: 0, y: isMobile ? 16 : 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: isMobile ? 16 : 6 }}
+                transition={{ duration: 0.16 }}
+                style={isMobile ? {
+                  position: 'fixed',
+                  bottom: 16, left: 8, right: 8,
+                  zIndex: 9999,
+                  background: 'rgba(8,4,18,0.97)',
+                  border: `1px solid ${color}55`,
+                  borderRadius: 12,
+                  padding: '14px 16px',
+                  boxShadow: `0 -4px 32px rgba(0,0,0,0.7), 0 0 16px ${color}22`,
+                } : {
+                  position: 'fixed',
+                  top: popoverPos.top,
+                  left: popoverPos.left,
+                  width: POPOVER_W,
+                  zIndex: 9999,
+                  background: 'rgba(8,4,18,0.97)',
+                  border: `1px solid ${color}55`,
+                  borderRadius: 10,
+                  padding: '11px 13px',
+                  boxShadow: `0 8px 32px rgba(0,0,0,0.7), 0 0 14px ${color}22`,
+                  pointerEvents: 'none',
+                }}
+              >
+                {/* Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 9 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-title)', fontSize: 13, fontWeight: 700, color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>{d.name}</div>
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
+                      {d.guild || '—'} · <span style={{ color: tribColor(d.trib) }}>{tribLabel(d.trib) || d.trib}</span>
+                      {hasC && <span style={{ color: '#CB4335', marginLeft: 5 }}>⚡ {d.hasChaos}</span>}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#D4A843', flexShrink: 0, marginLeft: 8 }}>
+                    {formatCP(raw.cp)}<span style={{ fontSize: 9, color: 'var(--muted)', marginLeft: 3 }}>CP</span>
                   </div>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#C9920B' }}>{formatCP(r.cp)}<span style={{ fontSize: 9, color: 'var(--muted)', marginLeft: 3 }}>CP</span></div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px 12px' }}>
-                {[
-                  { l: 'Heal Up',      v: r.healUp.toFixed(1),      c: '#00E87C' },
-                  { l: 'Heal Down',    v: r.healDown.toFixed(1),    c: '#00E87C' },
-                  { l: 'Total Heal',   v: r.totalHeal.toFixed(1),   c: '#00E87C' },
-                  { l: 'Beast Up',     v: r.beastUp.toFixed(1),     c: '#00BFFF' },
-                  { l: 'Beast Down',   v: r.beastDown.toFixed(1),   c: '#00BFFF' },
-                  { l: 'Total Beast',  v: r.totalBeast.toFixed(1),  c: '#00BFFF' },
-                  { l: 'FDU Jade',     v: r.fdu.toFixed(1),         c: '#B026FF' },
-                  { l: 'FDD Cinnabar', v: r.fdd.toFixed(1),         c: '#FF8C42' },
-                  { l: 'Total Finals', v: r.totalFinals.toFixed(1), c: '#FF3B2B' },
-                ].map(({ l, v, c }) => (
-                  <div key={l} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <span style={{ fontSize: 9, color: 'var(--muted)', letterSpacing: '0.08em' }}>{l}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: c }}>{v}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          );
-        })()}
-      </AnimatePresence>
+                {/* Stats grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '5px 10px' }}>
+                  {[
+                    { l: 'Heal Up',      v: raw.healUp.toFixed(1),      c: '#1EBD82' },
+                    { l: 'Heal Down',    v: raw.healDown.toFixed(1),    c: '#1EBD82' },
+                    { l: 'Total Heal',   v: raw.totalHeal.toFixed(1),   c: '#1EBD82' },
+                    { l: 'Beast Up',     v: raw.beastUp.toFixed(1),     c: '#2E9BE5' },
+                    { l: 'Beast Down',   v: raw.beastDown.toFixed(1),   c: '#2E9BE5' },
+                    { l: 'Total Beast',  v: raw.totalBeast.toFixed(1),  c: '#2E9BE5' },
+                    { l: 'FDU',          v: raw.fdu.toFixed(1),         c: '#9B59B6' },
+                    { l: 'FDD',          v: raw.fdd.toFixed(1),         c: '#D4813A' },
+                    { l: 'Total Finals', v: raw.totalFinals.toFixed(1), c: '#CB4335' },
+                  ].map(({ l, v, c }) => (
+                    <div key={l} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <span style={{ fontSize: 8, color: 'var(--muted)', letterSpacing: '0.06em' }}>{l}</span>
+                      <span style={{ fontSize: 11, fontWeight: 600, color: c }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            );
+          })()}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
@@ -532,5 +610,97 @@ function guildAvgChart(data) {
       },
       emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(176,38,255,0.4)' } },
     }],
+  };
+}
+
+/* ─── Healers vs Fighters scatter ────────────────────────────────────────── */
+const VI_PALETTE = ['#C9920B','#FF3B2B','#B026FF','#00BFFF','#00E87C','#FF8C42','#6B8AFF','#EC4899','#14B8A6','#F59E0B'];
+
+function healerFighterChart(rows) {
+  if (!rows.length) return { series: [] };
+  const guilds  = [...new Set(rows.map(r => r.guild))];
+  const maxCP   = Math.max(...rows.map(r => r.cp), 1);
+  return {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 10 },
+      formatter: p => {
+        const [totalHeal, totalBeast, name, guild, cp] = p.value;
+        const ratio = totalHeal + totalBeast > 0 ? totalHeal / (totalHeal + totalBeast) : 0.5;
+        const role  = ratio > 0.6 ? 'Healer' : ratio < 0.4 ? 'Fighter' : 'Balanced';
+        return `<b>${name}</b><br/>${guild}<br/>Heal: ${totalHeal.toFixed(1)} · Beast: ${totalBeast.toFixed(1)}<br/>Role: <b style="color:${p.color}">${role}</b><br/>CP: ${formatCP(cp)}`;
+      },
+    },
+    grid: { left: 56, right: 16, top: 24, bottom: 48 },
+    xAxis: {
+      name: 'Total Heal', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      type: 'value',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    yAxis: {
+      name: 'Total Beast', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      type: 'value',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    series: [{
+      type: 'scatter',
+      data: rows.map(r => [r.totalHeal, r.totalBeast, r.player, r.guild, r.cp]),
+      symbolSize: v => Math.max(7, Math.min(22, (v[4] / maxCP) * 24 + 5)),
+      itemStyle: { color: p => VI_PALETTE[guilds.indexOf(p.value[3]) % VI_PALETTE.length], opacity: 0.85 },
+      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(201,146,11,0.5)', opacity: 1 } },
+    }],
+  };
+}
+
+/* ─── Beast efficiency grouped bar ──────────────────────────────────────── */
+function beastEfficiencyChart(rows) {
+  if (!rows.length) return { series: [] };
+  const sorted = [...rows].sort((a, b) => b.totalBeast - a.totalBeast);
+  const names  = sorted.map(r => r.player);
+  return {
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 10 },
+    },
+    legend: {
+      bottom: 0, left: 'center',
+      textStyle: { color: '#8B7E6A', fontSize: 9 },
+      itemWidth: 8, itemHeight: 8,
+    },
+    grid: { left: 16, right: 16, top: 8, bottom: 44, containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: names,
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#EDE0C4', fontSize: 8, rotate: 20, overflow: 'truncate', width: 70 },
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    series: [
+      {
+        name: 'Beast Up', type: 'bar',
+        data: sorted.map(r => r.beastUp),
+        barWidth: '35%',
+        itemStyle: { color: '#00BFFF', borderRadius: [3, 3, 0, 0] },
+        emphasis: { itemStyle: { shadowBlur: 8 } },
+      },
+      {
+        name: 'Beast Down', type: 'bar',
+        data: sorted.map(r => r.beastDown),
+        barWidth: '35%',
+        itemStyle: { color: '#B026FF', borderRadius: [3, 3, 0, 0] },
+        emphasis: { itemStyle: { shadowBlur: 8 } },
+      },
+    ],
   };
 }

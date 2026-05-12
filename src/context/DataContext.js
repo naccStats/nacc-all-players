@@ -73,6 +73,9 @@ export const DataContextProvider = ({ children }) => {
             updated: (row['Updated?'] || '').toString().trim().toUpperCase(),
           };
 
+          // Skip rows where CP didn't parse to a real value — they corrupt guild averages
+          if (p.cp <= 0) continue;
+
           if (!uidMap.has(uid)) {
             uidMap.set(uid, p);
             parsed.push(p);

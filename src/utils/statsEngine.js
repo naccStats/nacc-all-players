@@ -75,9 +75,9 @@ export const computeGuildStats = (players) => {
         members: [],
         totalCP: 0,
         chaosCount: 0,
-        sumFDU: 0,
-        sumFDD: 0,
-        sumFinals: 0,
+        sumFDU: 0, countFDU: 0,
+        sumFDD: 0, countFDD: 0,
+        sumFinals: 0, countFinals: 0,
         tribBreakdown: {}
       };
     }
@@ -86,9 +86,9 @@ export const computeGuildStats = (players) => {
     guildData.members.push(p);
     guildData.totalCP += p.cp || 0;
     if (p.hasChaos) guildData.chaosCount++;
-    guildData.sumFDU += p.fdu || 0;
-    guildData.sumFDD += p.fdd || 0;
-    guildData.sumFinals += p.totalFinals || 0;
+    if (p.fdu > 0)         { guildData.sumFDU   += p.fdu;         guildData.countFDU++;    }
+    if (p.fdd > 0)         { guildData.sumFDD   += p.fdd;         guildData.countFDD++;    }
+    if (p.totalFinals > 0) { guildData.sumFinals += p.totalFinals; guildData.countFinals++; }
     if (p.tribulation) {
       guildData.tribBreakdown[p.tribulation] = (guildData.tribBreakdown[p.tribulation] || 0) + 1;
     }
@@ -103,9 +103,9 @@ export const computeGuildStats = (players) => {
       avgCP: g.totalCP / n,
       chaosCount: g.chaosCount,
       chaosRate: g.chaosCount / n,
-      avgFDU: g.sumFDU / n,
-      avgFDD: g.sumFDD / n,
-      avgFinals: g.sumFinals / n,
+      avgFDU:    g.countFDU    > 0 ? g.sumFDU    / g.countFDU    : 0,
+      avgFDD:    g.countFDD    > 0 ? g.sumFDD    / g.countFDD    : 0,
+      avgFinals: g.countFinals > 0 ? g.sumFinals / g.countFinals : 0,
       tribBreakdown: g.tribBreakdown,
       members: g.members
     };

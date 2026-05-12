@@ -28,7 +28,7 @@ export const computeAnalytics = (players) => {
     };
   
     const nCP = norm(players, 'cp');
-    const nFinals = norm(players, 'finals');
+    const nFinals = norm(players, 'totalFinals');
     const nFdu = norm(players, 'fdu');
     const nFdd = norm(players, 'fdd');
     const nTribe = norm(players, 'tribulation');
@@ -37,7 +37,7 @@ export const computeAnalytics = (players) => {
     const rankings = byCP.map(p => {
       const composite =
         nCP(p.cp) * 0.35 +
-        nFinals(p.finals) * 0.25 +
+        nFinals(p.totalFinals) * 0.25 +
         nFdu(p.fdu) * 0.15 +
         nFdd(p.fdd) * 0.15 +
         nTribe(p.tribulation) * 0.10;
@@ -83,8 +83,8 @@ export const computeAnalytics = (players) => {
     const chaosRate = (totalChaos / rankings.length) * 100;
     const beastCounts = {};
     rankings.forEach(p => {
-      if (p.beastName) {
-        beastCounts[p.beastName] = (beastCounts[p.beastName] || 0) + 1;
+      if (p.chaosBeast) {
+        beastCounts[p.chaosBeast] = (beastCounts[p.chaosBeast] || 0) + 1;
       }
     });
     const beastRankings = Object.entries(beastCounts)
@@ -124,7 +124,7 @@ export const computeAnalytics = (players) => {
     };
   
     const cpArr = rankings.map(p => p.cp);
-    const finalsArr = rankings.map(p => p.finals);
+    const finalsArr = rankings.map(p => p.totalFinals);
     const chaosArr = rankings.map(p => (p.hasChaos ? 1 : 0));
   
     const correlations = {

@@ -7,17 +7,15 @@ import GlassCard from '../components/GlassCard';
 import SearchBar from '../components/SearchBar';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Crown } from 'lucide-react';
+import { Shield, Crown, LayoutGrid, BarChart2, Circle } from 'lucide-react';
 
 const TOOLTIP_BG = 'rgba(13,7,24,0.97)';
-const TOOLTIP_BORDER = 'rgba(201,146,11,0.35)';
-const CHART_TEXT = '#8B7E6A';
-const CHART_GRID_LINE = 'rgba(201,146,11,0.08)';
+const TOOLTIP_BORDER = 'rgba(212,168,67,0.32)';
+const CHART_TEXT = '#7D7263';
+const CHART_GRID_LINE = 'rgba(212,168,67,0.08)';
 
 const PALETTE = [
-  '#C9920B','#FF3B2B','#B026FF','#00BFFF','#00E87C',
-  '#FF8C42','#6B8AFF','#EC4899','#14B8A6','#F59E0B',
-  '#6366F1','#8B5CF6',
+  '#D4A843','#CB4335','#9B59B6','#2E9BE5','#1EBD82',
 ];
 
 function guildBarChart(guilds) {
@@ -56,7 +54,7 @@ function guildBarChart(guilds) {
         borderRadius: [0, 5, 5, 0],
         color: p => PALETTE[p.dataIndex % PALETTE.length],
       },
-      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(201,146,11,0.4)' } },
+      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.32)' } },
     }],
   };
 }
@@ -88,7 +86,7 @@ function guildPieChart(guilds) {
       itemStyle: { borderRadius: 4, borderColor: '#0D0718', borderWidth: 2 },
       label: { show: true, position: 'outside', formatter: '{b}\n{d}%', color: CHART_TEXT, fontSize: 8 },
       labelLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
-      emphasis: { itemStyle: { shadowBlur: 16, shadowColor: 'rgba(201,146,11,0.35)' } },
+      emphasis: { itemStyle: { shadowBlur: 14, shadowColor: 'rgba(212,168,67,0.28)' } },
       data: pieData,
     }],
   };
@@ -98,6 +96,7 @@ export default function GuildAnalytics() {
   const rawPlayers = useContext(PlayerContext);
   const [search, setSearch] = useState('');
   const [selectedGuild, setSelectedGuild] = useState(null);
+  const [hoveredGuild, setHoveredGuild] = useState(null);
 
   const guildStats = useMemo(() => computeGuildStats(rawPlayers || []), [rawPlayers]);
 
@@ -139,7 +138,19 @@ export default function GuildAnalytics() {
         </GlassCard>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      <GlassCard>
+        {/* Window panel header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid rgba(201,146,11,0.12)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Shield size={14} style={{ color: 'var(--azure-bright)' }} />
+            <span style={{ fontSize: 12, fontFamily: 'var(--font-title)', fontWeight: 700, color: '#EDE0C4', letterSpacing: '0.05em' }}>Guild Roster</span>
+          </div>
+          <span style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'monospace' }}>{filtered.length} guilds</span>
+        </div>
+        {/* Scrollable inner grid */}
+        <div style={{ maxHeight: 580, overflowY: 'auto', paddingRight: 4 }}
+          className="max-h-[420px] md:max-h-[580px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         {filtered.map((g, i) => {
           const isSelected = selectedGuild === g.name;
           const share = totalCP > 0 ? (g.totalCP / totalCP * 100) : 0;
@@ -232,7 +243,250 @@ export default function GuildAnalytics() {
             </GlassCard>
           );
         })}
+          </div>
+        </div>
+      </GlassCard>
+
+      {/* ── Treemap + Stacked Bar ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <GlassCard variant="cyan">
+          <div className="flex items-center gap-2 mb-2">
+            <LayoutGrid size={14} style={{ color: 'var(--azure-bright)' }} />
+            <h2 className="text-sm font-display font-bold gradient-text">Guild Realm Map</h2>
+          </div>
+          <ChartContainer option={guildTreemapChart(filtered)} ratio={9 / 16} maxHeight={360} />
+          {/* Color legend */}
+          {(() => {
+            const validGuilds = filtered.slice(0, 20).filter(g => g.memberCount > 0);
+            const minAvg = validGuilds.length ? Math.min(...validGuilds.map(g => g.avgCP)) : 0;
+            const maxAvg = validGuilds.length ? Math.max(...validGuilds.map(g => g.avgCP)) : 0;
+            return (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ height: 8, borderRadius: 999, background: 'linear-gradient(to right, #1a2744, #6C3483, #D4A843)', marginBottom: 4 }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 9, color: 'var(--muted)' }}>Low Avg CP · {formatCP(minAvg)}</span>
+                  <span style={{ fontSize: 9, color: 'var(--muted)' }}>Cell size = member count</span>
+                  <span style={{ fontSize: 9, color: 'var(--muted)' }}>High Avg CP · {formatCP(maxAvg)}</span>
+                </div>
+              </div>
+            );
+          })()}
+        </GlassCard>
+
+        <GlassCard variant="purple">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart2 size={14} style={{ color: 'var(--imperial-bright)' }} />
+            <h2 className="text-sm font-display font-bold gradient-text">Tribulation Composition — Top 8 Guilds</h2>
+          </div>
+          <ChartContainer option={guildTribStackedBar(filtered)} ratio={9 / 16} maxHeight={360} />
+        </GlassCard>
       </div>
+
+      {/* ── Bubble Chart ── */}
+      <GlassCard variant="gold">
+        <div className="flex items-center gap-2 mb-2">
+          <Circle size={14} style={{ color: 'var(--gold-bright)' }} />
+          <h2 className="text-sm font-display font-bold gradient-text-gold">Guild Power Profile — Avg CP vs Members</h2>
+        </div>
+        <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 8 }}>X = Avg CP · Y = Member count · Bubble size = Chaos rate · Hover a guild name to highlight</div>
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Chart */}
+          <div style={{ flex: '1 1 0', minWidth: 0 }}>
+            <ChartContainer option={guildBubbleChart(filtered, hoveredGuild)} ratio={9 / 16} maxHeight={380} />
+          </div>
+          {/* Scrollable guild legend */}
+          <div style={{
+            width: 'auto', flexShrink: 0,
+            background: 'rgba(13,7,24,0.55)',
+            border: '1px solid rgba(201,146,11,0.12)',
+            borderRadius: 10,
+            overflow: 'hidden',
+            display: 'flex', flexDirection: 'column',
+          }} className="w-full md:w-44">
+            <div style={{
+              padding: '7px 10px 6px',
+              borderBottom: '1px solid rgba(201,146,11,0.1)',
+              fontSize: 10, fontFamily: 'var(--font-title)', fontWeight: 700,
+              color: '#EDE0C4', letterSpacing: '0.05em',
+            }}>Guilds</div>
+            <div style={{ overflowY: 'auto', maxHeight: 320, padding: '4px 0' }}>
+              {filtered.slice(0, 15).map((g, i) => {
+                const isHovered = hoveredGuild === i;
+                return (
+                  <div
+                    key={g.name}
+                    onMouseEnter={() => setHoveredGuild(i)}
+                    onMouseLeave={() => setHoveredGuild(null)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 7,
+                      padding: '5px 10px',
+                      cursor: 'default',
+                      background: isHovered ? 'rgba(201,146,11,0.1)' : 'transparent',
+                      transition: 'background 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: 9, height: 9, borderRadius: '50%', flexShrink: 0,
+                      background: PALETTE[i % PALETTE.length],
+                      boxShadow: isHovered ? `0 0 6px ${PALETTE[i % PALETTE.length]}` : 'none',
+                      transition: 'box-shadow 0.15s',
+                    }} />
+                    <span style={{
+                      fontSize: 10, color: isHovered ? '#EDE0C4' : 'var(--muted)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      fontWeight: isHovered ? 700 : 400,
+                      transition: 'color 0.15s',
+                    }}>{g.name}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </GlassCard>
     </motion.div>
   );
+}
+
+/* ─── Treemap chart ─────────────────────────────────────────────────────── */
+function guildTreemapChart(guilds) {
+  if (!guilds.length) return { series: [] };
+  const maxAvg = Math.max(...guilds.map(g => g.avgCP), 1);
+  const minAvg = Math.min(...guilds.map(g => g.avgCP), 0);
+  const range  = maxAvg - minAvg || 1;
+  const lerpColor = (t) => {
+    // 3-stop: dark navy (#1a2744) → deep amethyst (#6C3483) → gold (#D4A843)
+    if (t <= 0.5) {
+      const s = t * 2;
+      const r = Math.round(26  + (108 - 26)  * s);
+      const g = Math.round(39  + (52  - 39)  * s);
+      const b = Math.round(68  + (131 - 68)  * s);
+      return `rgb(${r},${g},${b})`;
+    } else {
+      const s = (t - 0.5) * 2;
+      const r = Math.round(108 + (212 - 108) * s);
+      const g = Math.round(52  + (168 - 52)  * s);
+      const b = Math.round(131 + (67  - 131) * s);
+      return `rgb(${r},${g},${b})`;
+    }
+  };
+  return {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(212,168,67,0.32)', borderWidth: 1,
+      textStyle: { color: '#E8D9B8', fontSize: 11 },
+      formatter: p => `<b style="color:var(--gold-bright)">${p.name}</b><br/>Members: <b>${p.value}</b><br/>Avg CP: ${formatCP(p.data?.avgCP || 0)}`,
+    },
+    series: [{
+      type: 'treemap',
+      data: guilds.slice(0, 20).map(g => ({
+        name: g.name,
+        value: g.memberCount,
+        avgCP: g.avgCP,
+        itemStyle: { color: lerpColor((g.avgCP - minAvg) / range) },
+        label: { color: '#EDE0C4', fontSize: 10, fontFamily: 'Cinzel,serif', overflow: 'truncate' },
+      })),
+      breadcrumb: { show: false },
+      roam: false,
+      nodeClick: false,
+      label: { show: true, position: 'inside', formatter: '{b}' },
+      emphasis: { label: { fontSize: 11, fontWeight: 700 }, itemStyle: { shadowBlur: 13, shadowColor: 'rgba(212,168,67,0.35)' } },
+    }],
+  };
+}
+
+/* ─── Stacked bar — tribulation tier breakdown ──────────────────────────── */
+const TRIB_STACK_TIERS = ['DG','SM','CE','CK','DL','GI','SI','CI','TI','GA','BI'];
+function guildTribStackedBar(guilds) {
+  if (!guilds.length) return { series: [] };
+  const top8 = guilds.slice(0, 8);
+  const activeTiers = TRIB_STACK_TIERS.filter(tier =>
+    top8.some(g => Object.entries(g.tribBreakdown).some(([k]) => k.startsWith(tier)))
+  );
+  return {
+    tooltip: {
+      trigger: 'axis', axisPointer: { type: 'shadow' },
+      appendToBody: true,
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 10 },
+    },
+    legend: {
+      bottom: 0, left: 'center', type: 'scroll',
+      textStyle: { color: '#8B7E6A', fontSize: 9 },
+      itemWidth: 8, itemHeight: 8, pageTextStyle: { color: '#8B7E6A' },
+    },
+    grid: { left: 16, right: 16, top: 8, bottom: 56, containLabel: true },
+    xAxis: {
+      type: 'category',
+      data: top8.map(g => g.name),
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#EDE0C4', fontSize: 8, rotate: 20, overflow: 'truncate', width: 80 },
+    },
+    yAxis: {
+      type: 'value',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    series: activeTiers.map(tier => ({
+      name: tier,
+      type: 'bar',
+      stack: 'total',
+      data: top8.map(g =>
+        Object.entries(g.tribBreakdown)
+          .filter(([k]) => k.startsWith(tier))
+          .reduce((s, [, v]) => s + v, 0)
+      ),
+      itemStyle: { color: tribColor(tier) || '#4B5563' },
+      emphasis: { itemStyle: { shadowBlur: 8 } },
+    })),
+  };
+}
+
+/* ─── Bubble chart — guild power profile ───────────────────────────────── */
+function guildBubbleChart(guilds, hoveredIndex = null) {
+  if (!guilds.length) return { series: [] };
+  const sliced = guilds.slice(0, 15);
+  return {
+    tooltip: {
+      trigger: 'item',
+      confine: true,
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 11 },
+      formatter: p => {
+        const [avgCP, members, chaosRate, name] = p.value;
+        return `<b style="color:var(--gold-bright)">${name}</b><br/>Avg CP: <b>${formatCP(avgCP)}</b><br/>Members: ${members}<br/>Chaos Rate: ${(chaosRate * 100).toFixed(1)}%`;
+      },
+    },
+    grid: { left: 56, right: 24, top: 24, bottom: 48 },
+    xAxis: {
+      name: 'Avg CP', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      type: 'value',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9, formatter: v => formatCP(v) },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    yAxis: {
+      name: 'Members', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      type: 'value',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    series: [{
+      type: 'scatter',
+      data: sliced.map((g, i) => ({
+        value: [g.avgCP, g.memberCount, g.chaosRate, g.name],
+        itemStyle: {
+          color: PALETTE[i % PALETTE.length],
+          opacity: hoveredIndex === null ? 0.82 : (i === hoveredIndex ? 1 : 0.12),
+          borderWidth: i === hoveredIndex ? 2 : 0,
+          borderColor: '#FFD700',
+        },
+      })),
+      symbolSize: v => Math.max(10, Math.min(48, (v[2] || 0) * 100 + 10)),
+      emphasis: { itemStyle: { shadowBlur: 16, shadowColor: 'rgba(212,168,67,0.38)', opacity: 1 } },
+      label: { show: false },
+    }],
+  };
 }

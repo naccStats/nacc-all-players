@@ -6,16 +6,17 @@ import { computeGlobalStats } from '../utils/statsEngine';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import ChartContainer from '../components/ChartContainer';
+import { AnimatedCounter } from '../hooks/useAnimatedCounter';
 import { motion } from 'framer-motion';
 import {
-  Users, Sword, Shield, Zap, Crown, Flame, Activity, TrendingUp,
+  Users, Sword, Shield, Zap, Crown, Flame, Activity, TrendingUp, Trophy, Award,
 } from 'lucide-react';
 
 /* ─── Cultivation-themed ECharts base styles ─────────────────────────────── */
-const CHART_TEXT   = '#8B7E6A';
-const CHART_BORDER = 'rgba(201,146,11,0.12)';
+const CHART_TEXT   = '#7D7263';
+const CHART_BORDER = 'rgba(212,168,67,0.10)';
 const TOOLTIP_BG   = 'rgba(13,7,24,0.97)';
-const TOOLTIP_BORDER = 'rgba(201,146,11,0.35)';
+const TOOLTIP_BORDER = 'rgba(212,168,67,0.32)';
 
 const baseTooltip = {
   backgroundColor: TOOLTIP_BG,
@@ -26,10 +27,10 @@ const baseTooltip = {
 
 /* ─── Tribulation color mapping ──────────────────────────────────────────── */
 const TRIB_COLORS = {
-  DG: '#C9920B', SM: '#FF3B2B', CE: '#FF8C42',
-  CK: '#FF00FF', DL: '#B026FF', GI: '#00BFFF',
-  SI: '#00E87C', CI: '#00E87C', TI: '#6B8AFF',
-  GA: '#6B7280', BI: '#4B5563',
+  DG: '#D4A843', SM: '#CB4335', CE: '#D4813A',
+  CK: '#B03A8E', DL: '#9B59B6', GI: '#2E9BE5',
+  SI: '#1EBD82', CI: '#1EBD82', TI: '#5D7FC2',
+  GA: '#A07830', BI: '#7A5C3A',
 };
 
 function getTribColor(t) {
@@ -42,9 +43,9 @@ function getTribColor(t) {
 function buildGuildChart(topGuilds) {
   if (!topGuilds?.length) return { series: [] };
   const guilds = topGuilds.slice(0, 15);
-  const colors = ['#C9920B','#FF3B2B','#B026FF','#00BFFF','#00E87C',
-                  '#FF8C42','#6B8AFF','#EC4899','#14B8A6','#F59E0B',
-                  '#6366F1','#8B5CF6','#84CC16','#FB923C','#A78BFA'];
+  const colors = ['#D4A843','#CB4335','#9B59B6','#2E9BE5','#1EBD82',
+                  '#D4813A','#5D7FC2','#B03A8E','#17A272','#E8C46A',
+                  '#6B7FBD','#8A4FA8','#3AAD7A','#C07030','#9B7FD4'];
   return {
     tooltip: { ...baseTooltip, trigger: 'axis',
       formatter: (p) => {
@@ -74,7 +75,7 @@ function buildGuildChart(topGuilds) {
         borderRadius: [0, 5, 5, 0],
         color: p => colors[p.dataIndex % colors.length],
       },
-      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(201,146,11,0.4)' } },
+      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.35)' } },
     }],
   };
 }
@@ -103,7 +104,7 @@ function buildTribChart(tribDist) {
       label: { show: false },
       labelLine: { show: false },
       emphasis: {
-        itemStyle: { shadowBlur: 18, shadowColor: 'rgba(201,146,11,0.35)' },
+        itemStyle: { shadowBlur: 16, shadowColor: 'rgba(212,168,67,0.28)' },
         label: { show: true, fontSize: 11, color: '#EDE0C4', fontWeight: 'bold' },
       },
       data: entries.map(e => ({
@@ -150,14 +151,14 @@ function buildCPDistributionChart(players) {
       itemStyle: {
         color: { type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0,   color: '#C9920B' },
-            { offset: 0.6, color: '#B026FF' },
-            { offset: 1,   color: '#00BFFF44' },
+            { offset: 0,   color: '#D4A843' },
+            { offset: 0.6, color: '#9B59B6' },
+            { offset: 1,   color: '#2E9BE544' },
           ],
         },
         borderRadius: [3, 3, 0, 0],
       },
-      emphasis: { itemStyle: { shadowBlur: 14, shadowColor: 'rgba(201,146,11,0.4)' } },
+      emphasis: { itemStyle: { shadowBlur: 13, shadowColor: 'rgba(212,168,67,0.32)' } },
     }],
   };
 }
@@ -177,58 +178,245 @@ export default function Dashboard() {
     >
       {/* ── Hero stat cards ── */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        <StatCard label="Cultivators"   value={stats.total.toLocaleString()}     icon={<Users    size={16}/>} color="cyan"   delay={0.05}/>
+        <StatCard label="Cultivators"   value={<AnimatedCounter value={stats.total} />}         icon={<Users    size={16}/>} color="cyan"   delay={0.05}/>
         <StatCard label="Avg CP"        value={formatCP(stats.avgCP)}            icon={<Sword    size={16}/>} color="gold"   delay={0.10} sub={`peak ${formatCP(stats.maxCP)}`}/>
         <StatCard label="Peak CP"       value={formatCP(stats.maxCP)}            icon={<Crown    size={16}/>} color="red"    delay={0.15}/>
-        <StatCard label="Active"        value={stats.activeCount.toLocaleString()} icon={<Zap   size={16}/>} color="jade"   delay={0.20} sub={`${Math.round(stats.activeCount/(stats.total||1)*100)}% active`}/>
-        <StatCard label="Chaos Users"   value={stats.chaosCount.toLocaleString()} icon={<Flame  size={16}/>} color="purple" delay={0.25} sub={`${((stats.chaosCount/(stats.total||1))*100).toFixed(1)}%`}/>
-        <StatCard label="Guilds"         value={stats.guildCount}                 icon={<Shield   size={16}/>} color="cyan"   delay={0.30}/>
-        <StatCard label="AFK"           value={stats.afkCount}                   icon={<Activity size={16}/>} color="gold"   delay={0.35}/>
+        <StatCard label="Active"        value={<AnimatedCounter value={stats.activeCount} />}    icon={<Zap   size={16}/>} color="jade"   delay={0.20} sub={`${Math.round(stats.activeCount/(stats.total||1)*100)}% active`}/>
+        <StatCard label="Chaos Users"   value={<AnimatedCounter value={stats.chaosCount} />}    icon={<Flame  size={16}/>} color="purple" delay={0.25} sub={`${((stats.chaosCount/(stats.total||1))*100).toFixed(1)}%`}/>
+        <StatCard label="Guilds"         value={<AnimatedCounter value={stats.guildCount} />}    icon={<Shield   size={16}/>} color="cyan"   delay={0.30}/>
+        <StatCard label="AFK"           value={<AnimatedCounter value={stats.afkCount} />}       icon={<Activity size={16}/>} color="gold"   delay={0.35}/>
       </div>
 
       {/* ── Top cultivators ── */}
       <GlassCard variant="gold" delay={0.30}>
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-5">
           <Crown size={15} style={{ color: 'var(--gold-bright)' }}/>
           <h2 className="text-sm font-display font-bold gradient-text-gold">
             Celestial Rankings — Top 10
           </h2>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2">
-          {stats.topPlayers.slice(0, 10).map((p, i) => (
-            <motion.div
-              key={p.uid}
-              className={`flex items-center gap-2.5 p-2.5 rounded-lg border transition-all ${
-                i === 0 ? 'bg-cyber-gold/3 border-cyber-gold/30'
-                : i < 3  ? 'bg-cyber-dark/60 border-cyber-gold/15'
-                :           'bg-cyber-dark/40 border-gray-800'
-              }`}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: 0.4 + i * 0.04 }}
-              whileHover={{ scale: 1.03 }}
-            >
-              <div
-                className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold font-display flex-shrink-0 ${
-                  i === 0 ? 'bg-cyber-gold/20 text-cyber-gold'
-                  : i < 3  ? 'bg-cyber-cyan/10 text-cyber-cyan'
-                  :           'bg-gray-800 text-gray-400'
-                }`}
-              >
-                {i + 1}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[11px] font-medium text-white truncate">{p.player}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-[9px] font-mono font-bold" style={{ color: getTribColor(p.tribulation) }}>
-                    {p.tribulation || '—'}
-                  </span>
-                  <span className="text-[9px] text-gray-500">{formatCP(p.cp)}</span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+
+        {/* ── Podium — positions 1·2·3 ── */}
+        {(() => {
+          const top3 = stats.topPlayers.slice(0, 3);
+          if (top3.length < 1) return null;
+          // display order: 2nd · 1st · 3rd
+          const order = [top3[1], top3[0], top3[2]].filter(Boolean);
+          const RANK_OF = p => top3.indexOf(p); // 0-based index back to rank
+          const COLORS  = ['#D4A843', '#A8A8A8', '#A07830'];
+          const GLOWS   = ['rgba(212,168,67,0.50)', 'rgba(168,168,168,0.22)', 'rgba(160,120,48,0.38)'];
+          const NUMERALS = ['一', '二', '三'];
+          const LABELS   = ['1st', '2nd', '3rd'];
+          // pillar heights for 2nd · 1st · 3rd
+          const HEIGHTS  = [120, 160, 100];
+
+          return (
+            <div style={{
+              display: 'flex',
+              alignItems: 'flex-end',
+              justifyContent: 'center',
+              gap: 8,
+              marginBottom: 20,
+              padding: '0 8px',
+            }}>
+              {order.map((p, colIdx) => {
+                const rank = RANK_OF(p); // 0=1st, 1=2nd, 2=3rd
+                const color = COLORS[rank];
+                const glow  = GLOWS[rank];
+                const pillarH = HEIGHTS[colIdx];
+                const isFirst = rank === 0;
+
+                return (
+                  <motion.div
+                    key={p.uid}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.35 + colIdx * 0.08 }}
+                    style={{ flex: 1, maxWidth: 180, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                  >
+                    {/* Rank icon badge — floating above pillar */}
+                    <motion.div
+                      animate={{ y: [0, -4, 0] }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut', delay: colIdx * 0.5 }}
+                      style={{
+                        width:  isFirst ? 52 : 42,
+                        height: isFirst ? 52 : 42,
+                        borderRadius: '50%',
+                        background: `radial-gradient(circle at 35% 35%, ${color}40, ${color}0A 70%)`,
+                        border: `1.5px solid ${color}88`,
+                        boxShadow: `0 0 18px ${glow}, 0 0 6px ${color}60`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        marginBottom: 6,
+                      }}
+                    >
+                      {rank === 0
+                        ? <Trophy size={isFirst ? 24 : 20} color={color} strokeWidth={1.8} style={{ filter: `drop-shadow(0 0 6px ${color})` }} />
+                        : <Award  size={isFirst ? 24 : 20} color={color} strokeWidth={1.8} style={{ filter: `drop-shadow(0 0 5px ${color})` }} />
+                      }
+                    </motion.div>
+
+                    {/* Player card — floats above the pillar */}
+                    <div style={{
+                      width: '100%',
+                      background: `linear-gradient(160deg, ${color}18, rgba(13,7,24,0.85))`,
+                      border: `1px solid ${color}55`,
+                      borderRadius: 10,
+                      padding: '10px 10px 8px',
+                      marginBottom: 0,
+                      boxShadow: `0 0 18px ${glow}, inset 0 0 24px ${color}0A`,
+                      textAlign: 'center',
+                      position: 'relative',
+                    }}>
+                      {/* Decorative Chinese numeral watermark */}
+                      <span style={{
+                        position: 'absolute', bottom: 4, right: 8,
+                        fontFamily: 'var(--font-deco)', fontSize: 32,
+                        color, opacity: 0.08, lineHeight: 1, pointerEvents: 'none',
+                        userSelect: 'none',
+                      }}>{NUMERALS[rank]}</span>
+
+                      {/* Rank label */}
+                      <div style={{
+                        fontSize: 9, fontFamily: 'var(--font-title)', letterSpacing: '0.15em',
+                        color, textTransform: 'uppercase', marginBottom: 5,
+                        textShadow: `0 0 8px ${color}`,
+                      }}>{LABELS[rank]}</div>
+
+                      {/* Player name */}
+                      <div style={{
+                        fontSize: isFirst ? 13 : 11,
+                        fontFamily: 'var(--font-title)', fontWeight: 700,
+                        color: '#EDE0C4', lineHeight: 1.3,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        marginBottom: 6,
+                      }}>{p.player}</div>
+
+                      {/* CP */}
+                      <div style={{
+                        fontSize: isFirst ? 15 : 12,
+                        fontFamily: 'monospace', fontWeight: 700,
+                        color, marginBottom: 5,
+                        textShadow: `0 0 10px ${color}88`,
+                      }}>{formatCP(p.cp)}</div>
+
+                      {/* Tribulation badge */}
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '2px 8px', borderRadius: 20, fontSize: 9,
+                        background: `${getTribColor(p.tribulation)}22`,
+                        border: `1px solid ${getTribColor(p.tribulation)}55`,
+                        color: getTribColor(p.tribulation),
+                        fontFamily: 'monospace', fontWeight: 700,
+                      }}>{p.tribulation || '—'}</span>
+
+                      {/* Guild */}
+                      {p.guild && (
+                        <div style={{ fontSize: 9, color: 'var(--muted)', marginTop: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.guild}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Podium pillar */}
+                    <div style={{
+                      width: '100%',
+                      height: pillarH,
+                      background: `linear-gradient(180deg, ${color}28 0%, ${color}10 60%, transparent 100%)`,
+                      border: `1px solid ${color}33`,
+                      borderTop: `2px solid ${color}66`,
+                      borderRadius: '0 0 6px 6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <span style={{
+                        fontFamily: 'var(--font-deco)', fontSize: isFirst ? 40 : 30,
+                        color, opacity: 0.18, userSelect: 'none',
+                      }}>{NUMERALS[rank]}</span>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+        {/* ── Ranks 4–10 leaderboard ── */}
+        {stats.topPlayers.length > 3 && (
+          <>
+            <div style={{
+              borderTop: '1px solid rgba(201,146,11,0.15)',
+              marginBottom: 10,
+              paddingTop: 12,
+              display: 'flex', alignItems: 'center', gap: 6,
+            }}>
+              <TrendingUp size={11} style={{ color: 'var(--muted)' }} />
+              <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                Ranks 4 – 10
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+              {stats.topPlayers.slice(3, 10).map((p, i) => {
+                const rank = i + 4;
+                const isEven = i % 2 === 0;
+                return (
+                  <motion.div
+                    key={p.uid}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.28, delay: 0.55 + i * 0.04 }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '6px 10px', borderRadius: 7,
+                      background: isEven ? 'rgba(201,146,11,0.03)' : 'transparent',
+                      border: '1px solid transparent',
+                      transition: 'background 0.15s, border-color 0.15s',
+                      cursor: 'default',
+                    }}
+                    whileHover={{ backgroundColor: 'rgba(201,146,11,0.06)', borderColor: 'rgba(201,146,11,0.12)' }}
+                  >
+                    {/* Rank badge */}
+                    <span style={{
+                      width: 22, textAlign: 'right', flexShrink: 0,
+                      fontSize: 10, fontFamily: 'var(--font-title)', fontWeight: 700,
+                      color: 'var(--muted)',
+                    }}>#{rank}</span>
+
+                    {/* Player name */}
+                    <span style={{
+                      flex: 1, minWidth: 0,
+                      fontSize: 11, color: '#EDE0C4',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>{p.player}</span>
+
+                    {/* Guild (dim) */}
+                    <span style={{
+                      fontSize: 9, color: 'var(--muted)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                      maxWidth: 80, flexShrink: 0,
+                    }}>{p.guild || '—'}</span>
+
+                    {/* Tribulation badge */}
+                    <span style={{
+                      padding: '1px 7px', borderRadius: 20, fontSize: 9,
+                      background: `${getTribColor(p.tribulation)}18`,
+                      border: `1px solid ${getTribColor(p.tribulation)}44`,
+                      color: getTribColor(p.tribulation),
+                      fontFamily: 'monospace', fontWeight: 700,
+                      flexShrink: 0,
+                    }}>{p.tribulation || '—'}</span>
+
+                    {/* CP */}
+                    <span style={{
+                      fontSize: 11, fontFamily: 'monospace', fontWeight: 700,
+                      color: 'var(--azure-bright)', flexShrink: 0, minWidth: 52, textAlign: 'right',
+                    }}>{formatCP(p.cp)}</span>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </GlassCard>
 
       {/* ── Charts row ── */}

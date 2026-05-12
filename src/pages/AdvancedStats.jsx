@@ -1,18 +1,19 @@
-import { useContext, useMemo } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
 import { tribRank, tribColor } from '../utils/tribulationSystem';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion } from 'framer-motion';
-import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers } from 'lucide-react';
+import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers, Calculator, Thermometer } from 'lucide-react';
 
-const T = { color: '#8B7E6A' };
-const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
-const SL = { color: 'rgba(201,146,11,0.08)', type: 'dashed' };
+const T = { color: '#7D7263' };
+const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(212,168,67,0.32)' };
+const SL = { color: 'rgba(212,168,67,0.08)', type: 'dashed' };
 
 export default function AdvancedStatistics() {
   const rawPlayers = useContext(PlayerContext);
+  const [calcCP, setCalcCP] = useState('');
 
   const stats = useMemo(() => {
     const players = rawPlayers || [];
@@ -52,8 +53,52 @@ export default function AdvancedStatistics() {
       return { ...p, compositeScore: score };
     }).sort((a, b) => b.compositeScore - a.compositeScore).slice(0, 15);
 
-    return { median, q1, q3, mean, scatterData, tribAvg, chaosAvg, noChaosAvg, chaosCount: chaosCPs.length, noChaosCount: noChaosCPs.length, fduFdd, scored, cps };
+    /* ── Box plot: CP spread per tribulation prefix ── */
+    const BOX_TIERS = ['DG','SM','CE','CK','DL','GI','SI','CI','TI','GA','BI'];
+    const boxData = BOX_TIERS.map(tier => {
+      const vals = players.filter(p => p.tribulation && p.tribulation.startsWith(tier) && p.cp > 0)
+                          .map(p => p.cp).sort((a, b) => a - b);
+      if (vals.length === 0) return null;
+      const q = (pct) => vals[Math.max(0, Math.floor(pct * (vals.length - 1)))];
+      // Single player: degenerate box (flat line at their CP)
+      return { tier, count: vals.length, single: vals.length === 1, data: [q(0), q(0.25), q(0.5), q(0.75), q(1)] };
+    }).filter(Boolean);
+
+    /* ── Heatmap: FDU vs FDD density ── */
+    const BINS = 10;
+    const fduAll = players.filter(p => p.fdu > 0 && p.fdd > 0).map(p => p.fdu);
+    const fddAll = players.filter(p => p.fdu > 0 && p.fdd > 0).map(p => p.fdd);
+    let heatData = [];
+    if (fduAll.length > 0) {
+      const minFDU = Math.min(...fduAll), maxFDU = Math.max(...fduAll);
+      const minFDD = Math.min(...fddAll), maxFDD = Math.max(...fddAll);
+      const fduStep = (maxFDU - minFDU) / BINS || 1;
+      const fddStep = (maxFDD - minFDD) / BINS || 1;
+      const matrix  = Array.from({ length: BINS }, () => Array(BINS).fill(0));
+      players.filter(p => p.fdu > 0 && p.fdd > 0).forEach(p => {
+        const xi = Math.min(Math.floor((p.fdu - minFDU) / fduStep), BINS - 1);
+        const yi = Math.min(Math.floor((p.fdd - minFDD) / fddStep), BINS - 1);
+        matrix[xi][yi]++;
+      });
+      heatData = matrix.flatMap((row, xi) => row.map((cnt, yi) => [xi, yi, cnt]));
+      heatData._minFDU = minFDU; heatData._maxFDU = maxFDU;
+      heatData._minFDD = minFDD; heatData._maxFDD = maxFDD;
+      heatData._step   = Math.round((maxFDU - minFDU) / BINS);
+    }
+
+    return { median, q1, q3, mean, scatterData, tribAvg, chaosAvg, noChaosAvg, chaosCount: chaosCPs.length, noChaosCount: noChaosCPs.length, fduFdd, scored, cps, boxData, heatData };
   }, [rawPlayers]);
+
+  /* ── Percentile calculator ────────────────────────────────────────────── */
+  const calcResult = useMemo(() => {
+    const v = parseFloat(calcCP);
+    if (!v || !stats.cps.length) return null;
+    const sorted = [...stats.cps].sort((a, b) => a - b);
+    const rank = sorted.filter(c => c > v).length + 1;
+    const total = sorted.length;
+    const pct = ((rank / total) * 100).toFixed(1);
+    return { rank, total, pct };
+  }, [calcCP, stats.cps]);
 
   return (
     <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
@@ -141,6 +186,70 @@ export default function AdvancedStatistics() {
           </div>
         </GlassCard>
       </div>
+
+      {/* ── Box Plot + Heatmap ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <GlassCard variant="purple">
+          <div className="flex items-center gap-2 mb-2">
+            <BarChart3 size={14} style={{ color: 'var(--imperial-bright)' }} />
+            <h2 className="text-sm font-display font-bold gradient-text">CP Spread by Tribulation Tier</h2>
+          </div>
+          <ChartContainer option={boxPlotChart(stats.boxData)} ratio={9 / 16} maxHeight={360} />
+        </GlassCard>
+
+        <GlassCard variant="red">
+          <div className="flex items-center gap-2 mb-2">
+            <Thermometer size={14} style={{ color: 'var(--cinnabar-bright)' }} />
+            <h2 className="text-sm font-display font-bold gradient-text">FDU vs FDD Density Heatmap</h2>
+          </div>
+          <ChartContainer option={heatmapChart(stats.heatData)} ratio={9 / 16} maxHeight={360} />
+        </GlassCard>
+      </div>
+
+      {/* ── Percentile Calculator ── */}
+      <GlassCard variant="cyan">
+        <div className="flex items-center gap-2 mb-3">
+          <Calculator size={14} style={{ color: 'var(--azure-bright)' }} />
+          <h2 className="text-sm font-display font-bold gradient-text">Percentile Calculator</h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }} className="md:flex-row md:items-center">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+            <span style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.08em', whiteSpace: 'nowrap' }}>Enter CP - In Billion(s):</span>
+            <input
+              type="number"
+              value={calcCP}
+              onChange={e => setCalcCP(e.target.value)}
+              placeholder="e.g. 3500"
+              style={{
+                flex: 1, padding: '7px 12px', borderRadius: 8,
+                background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(201,146,11,0.25)',
+                color: '#EDE0C4', fontSize: 12, fontFamily: 'monospace', outline: 'none',
+                minWidth: 0,
+              }}
+            />
+          </div>
+          {calcResult ? (
+            <motion.div
+              key={calcCP}
+              initial={{ opacity: 0, x: 12 }}
+              animate={{ opacity: 1, x: 0 }}
+              style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}
+            >
+              <span style={{ fontSize: 22, fontFamily: 'var(--font-title)', fontWeight: 700, color: 'var(--gold-bright)', whiteSpace: 'nowrap' }}>
+                Rank #{calcResult.rank}
+              </span>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--muted)' }}>of {calcResult.total} cultivators</div>
+                <div style={{ fontSize: 12, color: 'var(--azure-bright)', fontWeight: 700 }}>Top {calcResult.pct}%</div>
+              </div>
+            </motion.div>
+          ) : (
+            <div style={{ fontSize: 10, color: 'var(--muted)', fontStyle: 'italic' }}>
+              Enter a CP value to see where it ranks in the realm.
+            </div>
+          )}
+        </div>
+      </GlassCard>
     </motion.div>
   );
 }
@@ -172,10 +281,11 @@ function scatterChart(data) {
       itemStyle: {
         color: p => {
           const norm = p.value[1] / maxCP;
-          const r = Math.round(201 * norm + 0 * (1 - norm));
-          const g = Math.round(146 * norm + 191 * (1 - norm));
-          const b = Math.round(11 * norm + 255 * (1 - norm));
-          return `rgba(${r},${g},${b},0.7)`;
+          // interpolate sapphire #2E9BE5 → gold #D4A843
+          const r = Math.round(212 * norm + 46  * (1 - norm));
+          const g = Math.round(168 * norm + 155 * (1 - norm));
+          const b = Math.round(67  * norm + 229 * (1 - norm));
+          return `rgba(${r},${g},${b},0.75)`;
         },
       },
     }],
@@ -211,7 +321,7 @@ function tribAvgChart(tribAvg) {
         borderRadius: [4, 4, 0, 0],
         color: p => tribColor(tribAvg[p.dataIndex].trib) || '#4B5563',
       },
-      emphasis: { itemStyle: { shadowBlur: 14, shadowColor: 'rgba(201,146,11,0.4)' } },
+      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.30)' } },
     }],
   };
 }
@@ -238,8 +348,103 @@ function fduFddChart(data) {
     },
     series: [{
       type: 'scatter', data, symbolSize: 5,
-      itemStyle: { color: 'rgba(201,34,24,0.55)' },
-      emphasis: { itemStyle: { shadowBlur: 8, shadowColor: 'rgba(201,34,24,0.5)' } },
+      itemStyle: { color: 'rgba(203,67,53,0.55)' },
+      emphasis: { itemStyle: { shadowBlur: 10, shadowColor: 'rgba(203,67,53,0.38)' } },
+    }],
+  };
+}
+
+function boxPlotChart(boxData) {
+  if (!boxData || !boxData.length) return { series: [] };
+  return {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 10 },
+      formatter: params => {
+        const p = params[0];
+        const entry = boxData[p.dataIndex];
+        const tier = entry?.tier || '';
+        // ECharts boxplot with trigger:'axis' prepends the category index: [catIdx, min, Q1, median, Q3, max]
+        const [, min, q1, med, q3, max] = p.value;
+        const color = tribColor(tier) || '#EDE0C4';
+        if (entry?.single) {
+          return `<b style="color:${color}">${tier}</b> <span style="color:var(--muted);font-size:9px">(1 player)</span><br/>CP: <b>${formatCP(min)}</b>`;
+        }
+        return `<b style="color:${color}">${tier}</b> <span style="color:var(--muted);font-size:9px">(${entry?.count} players)</span><br/>
+          Max: ${formatCP(max)}<br/>Q3: ${formatCP(q3)}<br/>Median: ${formatCP(med)}<br/>Q1: ${formatCP(q1)}<br/>Min: ${formatCP(min)}`;
+      },
+    },
+    grid: { left: 56, right: 16, top: 12, bottom: 48 },
+    xAxis: {
+      type: 'category',
+      data: boxData.map(b => b.tier),
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#EDE0C4', fontSize: 9, rotate: 30 },
+    },
+    yAxis: {
+      type: 'log',
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 9, formatter: v => formatCP(v) },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    },
+    series: [{
+      type: 'boxplot',
+      data: boxData.map(b => b.data),
+      itemStyle: {
+        color: p => (tribColor(boxData[p.dataIndex]?.tier) || '#4B5563') + '33',
+        borderColor: p => tribColor(boxData[p.dataIndex]?.tier) || '#4B5563',
+        borderWidth: 1.5,
+      },
+      emphasis: { itemStyle: { shadowBlur: 11, shadowColor: 'rgba(212,168,67,0.30)' } },
+    }],
+  };
+}
+
+function heatmapChart(heatData) {
+  if (!heatData || !heatData.length) return { series: [] };
+  const BINS = 10;
+  const minFDU = heatData._minFDU || 0;
+  const minFDD = heatData._minFDD || 0;
+  const step   = heatData._step || 50;
+  const maxCount = Math.max(...heatData.map(d => d[2]), 1);
+  return {
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 10 },
+      formatter: p => {
+        const fduMin = (minFDU + p.value[0] * step).toFixed(0);
+        const fddMin = (minFDD + p.value[1] * step).toFixed(0);
+        return `FDU ~${fduMin} · FDD ~${fddMin}<br/>Players: <b>${p.value[2]}</b>`;
+      },
+    },
+    visualMap: {
+      min: 0, max: maxCount,
+      calculable: true,
+      orient: 'horizontal', bottom: 0, left: 'center',
+      inRange: { color: ['rgba(155,89,182,0.15)', '#9B59B6', '#D4A843'] },
+      textStyle: { color: '#8B7E6A', fontSize: 9 },
+    },
+    grid: { left: 48, right: 16, top: 12, bottom: 52 },
+    xAxis: {
+      type: 'category',
+      data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDU + i * step)}`),
+      name: 'FDU', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 8, rotate: 30 },
+    },
+    yAxis: {
+      type: 'category',
+      data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDD + i * step)}`),
+      name: 'FDD', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+      axisLabel: { color: '#8B7E6A', fontSize: 8 },
+    },
+    series: [{
+      type: 'heatmap',
+      data: heatData.filter(d => typeof d[0] === 'number'),
+      emphasis: { itemStyle: { shadowBlur: 11, shadowColor: 'rgba(212,168,67,0.30)' } },
     }],
   };
 }

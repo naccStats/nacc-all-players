@@ -7,6 +7,9 @@ import PlayerRankings from './pages/PlayerRankings';
 import GuildAnalytics from './pages/GuildAnalytics';
 import AdvancedStatistics from './pages/AdvancedStats';
 import VisualInsights from './pages/VisualInsights';
+import PlayerProfile from './pages/PlayerProfile';
+import ChaosBestiary from './pages/ChaosBestiary';
+import GuildComparison from './pages/GuildComparison';
 import { motion } from 'framer-motion';
 
 export const PlayerContext = createContext([]);
@@ -66,6 +69,9 @@ const AppInner = () => {
               <Route path="/guilds"   element={<GuildAnalytics />} />
               <Route path="/advanced" element={<AdvancedStatistics />} />
               <Route path="/insights" element={<VisualInsights />} />
+              <Route path="/player/:uid" element={<PlayerProfile />} />
+              <Route path="/bestiary"    element={<ChaosBestiary />} />
+              <Route path="/compare"     element={<GuildComparison />} />
             </Routes>
           </Suspense>
         </motion.div>

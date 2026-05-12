@@ -6,10 +6,12 @@ import GlassCard from '../components/GlassCard';
 import SearchBar from '../components/SearchBar';
 import { FilterSelect } from '../components/FilterBar';
 import { motion } from 'framer-motion';
-import { ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function PlayerRankings() {
   const rawPlayers = useContext(PlayerContext);
+  const navigate   = useNavigate();
   const [search, setSearch] = useState('');
   const [guildFilter, setGuildFilter] = useState('all');
   const [chaosFilter, setChaosFilter] = useState('all');
@@ -29,6 +31,14 @@ export default function PlayerRankings() {
     () => [...new Set((rawPlayers || []).map(p => p.guild).filter(Boolean))].sort(),
     [rawPlayers]
   );
+
+  /* Percentile map: uid → top-X% rank */
+  const pctMap = useMemo(() => {
+    const sorted = [...(rawPlayers || [])].sort((a, b) => (b.cp || 0) - (a.cp || 0));
+    const map = {};
+    sorted.forEach((p, i) => { map[p.uid] = ((i + 1) / sorted.length) * 100; });
+    return map;
+  }, [rawPlayers]);
 
   const filtered = useMemo(() => {
     const data = rawPlayers || [];
@@ -57,6 +67,24 @@ export default function PlayerRankings() {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
+
+  /* Export CSV */
+  const handleExport = () => {
+    const headers = ['Rank','Player','Guild','UID','CP','Tribulation','FDU','FDD','Total Finals','Has Chaos','Beast'];
+    const rows = filtered.map((p, i) => [
+      i + 1, p.player, p.guild || '', p.uid, p.cp || 0,
+      p.tribulation || '', p.fdu || 0, p.fdd || 0, p.totalFinals || 0,
+      p.hasChaos ? 'Yes' : 'No', p.chaosBeast || '',
+    ]);
+    const csv = [headers, ...rows]
+      .map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = 'cultivators-export.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const SORT_OPTIONS = [
     { value: 'cp',          label: 'CP'     },
@@ -157,8 +185,20 @@ export default function PlayerRankings() {
           </button>
         </div>
 
-        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--muted)' }}>
-          {filtered.length} cultivators{guildFilter !== 'all' ? ` · ${guildFilter}` : ''}
+        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span>{filtered.length} cultivators{guildFilter !== 'all' ? ` · ${guildFilter}` : ''}</span>
+          <button
+            onClick={handleExport}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 12px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
+              fontFamily: 'var(--font-title)', letterSpacing: '0.08em',
+              background: 'rgba(0,232,124,0.08)',
+              color: '#00E87C',
+              border: '1px solid rgba(0,232,124,0.3)',
+              transition: 'all 0.15s',
+            }}
+          ><Download size={10} /> Export CSV</button>
         </div>
       </GlassCard>
 
@@ -169,7 +209,7 @@ export default function PlayerRankings() {
             const rank = (page - 1) * perPage + i + 1;
             const isTop = rank <= 3;
             const tc = tribColor(p.tribulation);
-            const rankColor = rank === 1 ? 'var(--gold-bright)' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : 'var(--muted)';
+            const rankColor = rank === 1 ? 'var(--gold-bright)' : rank === 2 ? '#A8A8A8' : rank === 3 ? '#A07830' : 'var(--muted)';
             const rankBg = rank === 1 ? 'rgba(201,146,11,0.15)' : rank === 2 ? 'rgba(180,180,180,0.1)' : rank === 3 ? 'rgba(205,127,50,0.15)' : 'rgba(30,20,40,0.6)';
             return (
               <motion.div
@@ -177,11 +217,13 @@ export default function PlayerRankings() {
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: i * 0.015 }}
+                onClick={() => navigate('/player/' + p.uid)}
                 style={{
                   background: isTop ? 'rgba(201,146,11,0.04)' : 'rgba(13,7,24,0.6)',
                   border: isTop ? '1px solid rgba(201,146,11,0.2)' : '1px solid rgba(255,255,255,0.06)',
                   borderRadius: 10,
                   padding: '10px 12px',
+                  cursor: 'pointer',
                 }}
               >
                 {/* Top row: rank + name + CP */}
@@ -194,8 +236,11 @@ export default function PlayerRankings() {
                     border: `1px solid ${rankColor}40`,
                   }}>{rank}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, color: '#EDE0C4', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.player}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 600, color: '#EDE0C4', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player}</span>
+                      {pctMap[p.uid] != null && (
+                        <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 10, background: 'rgba(46,155,229,0.12)', color: 'var(--azure-bright)', border: '1px solid rgba(46,155,229,0.25)', flexShrink: 0, fontWeight: 600 }}>Top {pctMap[p.uid].toFixed(2)}%</span>
+                      )}
                     </div>
                     <div style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'monospace' }}>
                       {p.guild || 'No Guild'} · UID {p.uid}
@@ -284,10 +329,11 @@ export default function PlayerRankings() {
                     <motion.tr
                       key={p.uid}
                       className="table-row-hover"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: rowBg }}
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: rowBg, cursor: 'pointer' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2, delay: i * 0.01 }}
+                      onClick={() => navigate('/player/' + p.uid)}
                     >
                       <td style={{ padding: '10px 16px' }}>
                         <div style={{
@@ -299,15 +345,18 @@ export default function PlayerRankings() {
                             : rank === 3 ? 'rgba(201,100,24,0.2)'
                             : 'rgba(30,20,40,0.6)',
                           color: rank === 1 ? 'var(--gold-bright)'
-                            : rank === 2 ? '#C0C0C0'
-                            : rank === 3 ? '#CD7F32'
+                            : rank === 2 ? '#A8A8A8'
+                            : rank === 3 ? '#A07830'
                             : 'var(--muted)',
                           border: rank <= 3 ? '1px solid rgba(201,146,11,0.3)' : '1px solid rgba(255,255,255,0.05)',
                         }}>{rank}</div>
                       </td>
                       <td style={{ padding: '10px 16px' }}>
-                        <div style={{ fontWeight: 500, color: '#EDE0C4', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {p.player}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 500, color: '#EDE0C4', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player}</span>
+                          {pctMap[p.uid] != null && (
+                            <span style={{ fontSize: 8, padding: '1px 5px', borderRadius: 10, background: 'rgba(46,155,229,0.10)', color: 'var(--azure-bright)', border: '1px solid rgba(46,155,229,0.20)', flexShrink: 0 }}>Top {pctMap[p.uid].toFixed(2)}%</span>
+                          )}
                         </div>
                         <div style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'monospace', marginTop: 2 }}>
                           UID: {p.uid}

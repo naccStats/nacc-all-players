@@ -8,6 +8,8 @@ import {
   BarChart3,
   Eye,
   ChevronLeft,
+  PawPrint,
+  Swords,
 } from 'lucide-react';
 
 const navItems = [
@@ -16,6 +18,8 @@ const navItems = [
   { path: '/guilds',    label: 'Guilds',     icon: Shield,          deco: '宗' },
   { path: '/advanced',  label: 'Advanced',   icon: BarChart3,       deco: '道' },
   { path: '/insights',  label: 'Insights',   icon: Eye,             deco: '悟' },
+  { path: '/bestiary',  label: 'Chaotic Beasts', icon: PawPrint,     deco: '兽' },
+  { path: '/compare',   label: 'Compare',    icon: Swords,          deco: '战' },
 ];
 
 const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {

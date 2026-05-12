@@ -89,21 +89,21 @@ export const tribRank = (t) => {
  */
 export const tribColor = (t) => {
   const r = Math.floor(tribRank(t)); // floor so CK2 (12.333) → 12
-  if (r >= 15) return '#C9920B'; // DG  — Dragon Gold
-  if (r >= 14) return '#FF3B2B'; // SM  — Cinnabar Red
-  if (r >= 13) return '#FF8C42'; // CE  — Flame Orange
-  if (r >= 12) return '#FF00FF'; // CK  — Mystic Magenta
-  if (r >= 11) return '#B026FF'; // DL  — Imperial Purple
-  if (r >= 10) return '#00BFFF'; // GI  — Azure Sky
-  if (r >= 9)  return '#00E87C'; // SI  — Jade Green
-  if (r >= 8)  return '#3DD68C'; // CI  — Lighter Jade
-  if (r >= 7)  return '#6B8AFF'; // TI  — Spirit Blue
-  if (r >= 6)  return '#C9920B'; // GA  — Amber Gold (lower)
-  if (r >= 5)  return '#7A6045'; // BI  — Bronze
-  if (r >= 4)  return '#9AB4C8'; // VT  — Void Silver
-  if (r >= 3)  return '#70C1B3'; // T   — Teal Transformation
-  if (r >= 2)  return '#5B8DB8'; // NS  — Nascent Blue
-  if (r >= 1)  return '#4A5568'; // QR  — Qi Grey
+  if (r >= 15) return '#D4A843'; // DG  — Imperial Gold
+  if (r >= 14) return '#CB4335'; // SM  — Dragon Vermillion
+  if (r >= 13) return '#D4813A'; // CE  — Celestial Amber
+  if (r >= 12) return '#B03A8E'; // CK  — Mystic Rose
+  if (r >= 11) return '#9B59B6'; // DL  — Amethyst
+  if (r >= 10) return '#2E9BE5'; // GI  — Royal Sapphire
+  if (r >= 9)  return '#1EBD82'; // SI  — Jade
+  if (r >= 8)  return '#17A272'; // CI  — Deep Jade
+  if (r >= 7)  return '#5D7FC2'; // TI  — Cornflower Blue
+  if (r >= 6)  return '#A07830'; // GA  — Burnished Bronze
+  if (r >= 5)  return '#7A5C3A'; // BI  — Dark Leather
+  if (r >= 4)  return '#6B8FAD'; // VT  — Periwinkle Steel
+  if (r >= 3)  return '#4FA89A'; // T   — Patina Teal
+  if (r >= 2)  return '#4A7FA8'; // NS  — Steel Blue
+  if (r >= 1)  return '#4A5568'; // QR  — Slate
   return '#2D2040';              // Unknown
 };
 
