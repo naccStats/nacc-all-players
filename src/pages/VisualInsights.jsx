@@ -583,7 +583,7 @@ function guildAvgChart(data) {
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => `<b>${p[0].name}</b><br/>Avg CP: ${formatCP(p[0].value)}`,
     },
-    grid: { left: 110, right: 24, top: 10, bottom: 28 },
+    grid: { left: 8, right: 8, top: 10, bottom: 8, containLabel: true },
     xAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
@@ -595,7 +595,7 @@ function guildAvgChart(data) {
       inverse: true,
       data: data.map(d => d.name),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 100, overflow: 'truncate' },
+      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 90, overflow: 'truncate' },
     },
     series: [{
       type: 'bar', data: data.map(d => d.avg), barWidth: 10,
@@ -632,7 +632,7 @@ function healerFighterChart(rows) {
         return `<b>${name}</b><br/>${guild}<br/>Heal: ${totalHeal.toFixed(1)} · Beast: ${totalBeast.toFixed(1)}<br/>Role: <b style="color:${p.color}">${role}</b><br/>CP: ${formatCP(cp)}`;
       },
     },
-    grid: { left: 56, right: 16, top: 24, bottom: 48 },
+    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
     xAxis: {
       name: 'Total Heal', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
       type: 'value',

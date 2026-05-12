@@ -55,7 +55,7 @@ function buildGuildChart(topGuilds) {
           Members: ${g.members}`;
       },
     },
-    grid: { left: 120, right: 24, top: 8, bottom: 28 },
+    grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
     xAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: CHART_BORDER } },
@@ -67,7 +67,7 @@ function buildGuildChart(topGuilds) {
       inverse: true,
       data: guilds.map(g => g.name),
       axisLine: { lineStyle: { color: CHART_BORDER } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 110, overflow: 'truncate' },
+      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 100, overflow: 'truncate' },
     },
     series: [{
       type: 'bar', data: guilds.map(g => g.totalCP), barWidth: 11,
@@ -134,7 +134,7 @@ function buildCPDistributionChart(players) {
     tooltip: { ...baseTooltip, trigger: 'axis',
       formatter: p => `Range: ${labels[p[0].dataIndex]}<br/>Count: <b>${p[0].value}</b>`,
     },
-    grid: { left: 44, right: 16, top: 12, bottom: 36 },
+    grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
     xAxis: {
       type: 'category', data: labels,
       axisLine: { lineStyle: { color: CHART_BORDER } },

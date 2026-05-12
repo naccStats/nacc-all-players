@@ -76,7 +76,7 @@ export default function ChaosBestiary() {
           return `<b style="color:${BEAST_COLORS[b]}">${b}</b><br/>Total CP: <b>${formatCP(d.totalCP)}</b><br/>Owners: ${d.count}`;
         },
       },
-      grid: { left: 80, right: 24, top: 12, bottom: 28 },
+      grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
       xAxis: {
         type: 'value',
         axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
@@ -141,7 +141,7 @@ export default function ChaosBestiary() {
         textStyle: { color: '#EDE0C4', fontSize: 11 },
         formatter: p => `<b style="color:${colors[p[0].dataIndex]}">${labels[p[0].dataIndex]}</b><br/>Avg CP: <b>${formatCP(p[0].value)}</b>`,
       },
-      grid: { left: 56, right: 16, top: 16, bottom: 36 },
+      grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
       xAxis: {
         type: 'category', data: labels,
         axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },

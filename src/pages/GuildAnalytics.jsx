@@ -7,7 +7,8 @@ import GlassCard from '../components/GlassCard';
 import SearchBar from '../components/SearchBar';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Crown, LayoutGrid, BarChart2, Circle } from 'lucide-react';
+import { Shield, Crown, LayoutGrid, BarChart2, Circle, ZoomIn, ZoomOut } from 'lucide-react';
+import 'echarts-gl';
 
 const TOOLTIP_BG = 'rgba(13,7,24,0.97)';
 const TOOLTIP_BORDER = 'rgba(212,168,67,0.32)';
@@ -34,7 +35,7 @@ function guildBarChart(guilds) {
           Members: ${g.memberCount}`;
       },
     },
-    grid: { left: 120, right: 24, top: 10, bottom: 28 },
+    grid: { left: 8, right: 8, top: 10, bottom: 8, containLabel: true },
     xAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: CHART_GRID_LINE } },
@@ -46,7 +47,7 @@ function guildBarChart(guilds) {
       inverse: true,
       data: guilds.map(g => g.name),
       axisLine: { lineStyle: { color: CHART_GRID_LINE } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 110, overflow: 'truncate' },
+      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 100, overflow: 'truncate' },
     },
     series: [{
       type: 'bar', data: guilds.map(g => g.totalCP), barWidth: 11,
@@ -76,17 +77,17 @@ function guildPieChart(guilds) {
       formatter: p => `<b style="color:${p.color}">${p.name}</b><br/>CP: ${formatCP(p.value)} (${p.percent.toFixed(3)}%)`,
     },
     legend: {
-      orient: 'vertical', right: 8, top: 'middle',
+      orient: 'horizontal', bottom: 2, left: 'center', type: 'scroll',
       textStyle: { color: CHART_TEXT, fontSize: 9 },
-      itemWidth: 8, itemHeight: 8,
+      itemWidth: 8, itemHeight: 8, pageTextStyle: { color: CHART_TEXT },
     },
     series: [{
-      type: 'pie', radius: ['32%', '66%'], center: ['35%', '50%'],
+      type: 'pie', radius: ['32%', '62%'], center: ['50%', '44%'],
       avoidLabelOverlap: true,
       itemStyle: { borderRadius: 4, borderColor: '#0D0718', borderWidth: 2 },
-      label: { show: true, position: 'outside', formatter: '{b}\n{d}%', color: CHART_TEXT, fontSize: 8 },
-      labelLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
-      emphasis: { itemStyle: { shadowBlur: 14, shadowColor: 'rgba(212,168,67,0.28)' } },
+      label: { show: false },
+      labelLine: { show: false },
+      emphasis: { itemStyle: { shadowBlur: 14, shadowColor: 'rgba(212,168,67,0.28)' }, label: { show: true, fontSize: 11, color: '#EDE0C4', fontWeight: 'bold' } },
       data: pieData,
     }],
   };
@@ -97,6 +98,7 @@ export default function GuildAnalytics() {
   const [search, setSearch] = useState('');
   const [selectedGuild, setSelectedGuild] = useState(null);
   const [hoveredGuild, setHoveredGuild] = useState(null);
+  const [zoom3D, setZoom3D] = useState(() => window.innerWidth < 640 ? 53 : 69);
 
   const guildStats = useMemo(() => computeGuildStats(rawPlayers || []), [rawPlayers]);
 
@@ -276,9 +278,19 @@ export default function GuildAnalytics() {
         <GlassCard variant="purple">
           <div className="flex items-center gap-2 mb-2">
             <BarChart2 size={14} style={{ color: 'var(--imperial-bright)' }} />
-            <h2 className="text-sm font-display font-bold gradient-text">Tribulation Composition — Top 8 Guilds</h2>
+            <h2 className="text-sm font-display font-bold gradient-text">Guild Territory Map — Tier × Players</h2>
           </div>
-          <ChartContainer option={guildTribStackedBar(filtered)} ratio={9 / 16} maxHeight={360} />
+          <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 6 }}>Drag to rotate · Scroll/pinch to zoom · X = Guild · Y = Trib tier · Z = Player count</div>
+          <ChartContainer option={guild3DBarChart(filtered, Math.round(400 - zoom3D * 3.2))} ratio={3 / 4} maxHeight={430} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(201,146,11,0.08)' }}>
+            <ZoomOut size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+            <input
+              type="range" min={1} max={100} step={1} value={zoom3D}
+              onChange={e => setZoom3D(Number(e.target.value))}
+              style={{ flex: 1, accentColor: 'var(--gold-bright)', cursor: 'pointer', height: 22, touchAction: 'none' }}
+            />
+            <ZoomIn size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+          </div>
         </GlassCard>
       </div>
 
@@ -395,51 +407,74 @@ function guildTreemapChart(guilds) {
   };
 }
 
-/* ─── Stacked bar — tribulation tier breakdown ──────────────────────────── */
-const TRIB_STACK_TIERS = ['DG','SM','CE','CK','DL','GI','SI','CI','TI','GA','BI'];
-function guildTribStackedBar(guilds) {
+/* ─── 3D bar — guild territory map ─────────────────────────────────────── */
+const TRIB_TIERS_3D = ['BI','TI','GA','CI','SI','GI','DL','CK','CE','SM','DG'];
+function guild3DBarChart(guilds, distance = 180) {
   if (!guilds.length) return { series: [] };
+  const isMobile = window.innerWidth < 640;
   const top8 = guilds.slice(0, 8);
-  const activeTiers = TRIB_STACK_TIERS.filter(tier =>
+  const truncate = name => isMobile && name.length > 7 ? name.slice(0, 7) + '\u2026' : name;
+  const activeTiers = TRIB_TIERS_3D.filter(tier =>
     top8.some(g => Object.entries(g.tribBreakdown).some(([k]) => k.startsWith(tier)))
   );
+  const data = [];
+  top8.forEach((g, gi) => {
+    activeTiers.forEach((tier, ti) => {
+      const count = Object.entries(g.tribBreakdown)
+        .filter(([k]) => k.startsWith(tier))
+        .reduce((s, [, v]) => s + v, 0);
+      if (count > 0) data.push({
+        value: [gi, ti, count],
+        itemStyle: { color: tribColor(tier) || '#4B5563', opacity: 0.88 },
+      });
+    });
+  });
   return {
     tooltip: {
-      trigger: 'axis', axisPointer: { type: 'shadow' },
-      appendToBody: true,
-      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
+      trigger: 'item',
+      backgroundColor: TOOLTIP_BG, borderColor: TOOLTIP_BORDER, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
+      formatter: p => {
+        const guild = top8[p.value[0]]?.name || '';
+        const tier  = activeTiers[p.value[1]] || '';
+        const color = tribColor(tier) || '#EDE0C4';
+        return `<b style="color:${color}">${tier}</b> · <b>${guild}</b><br/>Players: <b>${p.value[2]}</b>`;
+      },
     },
-    legend: {
-      bottom: 0, left: 'center', type: 'scroll',
-      textStyle: { color: '#8B7E6A', fontSize: 9 },
-      itemWidth: 8, itemHeight: 8, pageTextStyle: { color: '#8B7E6A' },
+    grid3D: {
+      boxWidth: isMobile ? 100 : 160, boxHeight: isMobile ? 60 : 80, boxDepth: isMobile ? 80 : 120,
+      viewControl: { distance, elevation: 22, azimuth: -30, autoRotate: false },
+      environment: 'rgba(0,0,0,0)',
+      light: { main: { intensity: 1.1, shadow: false }, ambient: { intensity: 0.35 } },
+      axisLine:    { lineStyle: { color: 'rgba(201,146,11,0.22)' } },
+      splitLine:   { lineStyle: { color: 'rgba(201,146,11,0.06)' } },
+      axisPointer: { lineStyle: { color: 'rgba(212,168,67,0.5)', width: 1 } },
     },
-    grid: { left: 16, right: 16, top: 8, bottom: 56, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: top8.map(g => g.name),
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#EDE0C4', fontSize: 8, rotate: 20, overflow: 'truncate', width: 80 },
+    xAxis3D: {
+      type: 'category', data: top8.map(g => truncate(g.name)), name: 'Guild',
+      nameTextStyle: { color: CHART_TEXT, fontSize: 9 },
+      axisLabel: { color: '#EDE0C4', fontSize: isMobile ? 6 : 7, interval: 0 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
     },
-    yAxis: {
-      type: 'value',
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 9 },
-      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+    yAxis3D: {
+      type: 'category', data: activeTiers, name: 'Tier',
+      nameTextStyle: { color: CHART_TEXT, fontSize: 9 },
+      axisLabel: { color: '#EDE0C4', fontSize: isMobile ? 7 : 8 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
     },
-    series: activeTiers.map(tier => ({
-      name: tier,
-      type: 'bar',
-      stack: 'total',
-      data: top8.map(g =>
-        Object.entries(g.tribBreakdown)
-          .filter(([k]) => k.startsWith(tier))
-          .reduce((s, [, v]) => s + v, 0)
-      ),
-      itemStyle: { color: tribColor(tier) || '#4B5563' },
-      emphasis: { itemStyle: { shadowBlur: 8 } },
-    })),
+    zAxis3D: {
+      type: 'value', name: 'Players',
+      nameTextStyle: { color: CHART_TEXT, fontSize: 9 },
+      axisLabel: { color: CHART_TEXT, fontSize: isMobile ? 7 : 8 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
+      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.06)' } },
+    },
+    series: [{
+      type: 'bar3D', data, shading: 'lambert',
+      label: { show: false },
+      emphasis: { label: { show: false }, itemStyle: { opacity: 1 } },
+      barSize: isMobile ? 1 : 1.5,
+    }],
   };
 }
 

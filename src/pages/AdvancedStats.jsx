@@ -5,7 +5,8 @@ import { tribRank, tribColor } from '../utils/tribulationSystem';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion } from 'framer-motion';
-import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers, Calculator, Thermometer } from 'lucide-react';
+import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers, Calculator, Thermometer, ZoomIn, ZoomOut } from 'lucide-react';
+import 'echarts-gl';
 
 const T = { color: '#7D7263' };
 const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(212,168,67,0.32)' };
@@ -14,6 +15,7 @@ const SL = { color: 'rgba(212,168,67,0.08)', type: 'dashed' };
 export default function AdvancedStatistics() {
   const rawPlayers = useContext(PlayerContext);
   const [calcCP, setCalcCP] = useState('');
+  const [zoom3DScatter, setZoom3DScatter] = useState(() => window.innerWidth < 640 ? 59 : 75);
 
   const stats = useMemo(() => {
     const players = rawPlayers || [];
@@ -26,7 +28,7 @@ export default function AdvancedStatistics() {
 
     const scatterData = players
       .filter(p => p.totalFinals > 0 && p.cp > 0)
-      .map(p => [p.totalFinals, p.cp, p.player, p.guild]);
+      .map(p => ({ value: [p.totalFinals, p.cp, p.fdu || 0, p.player], trib: p.tribulation }));
 
     // Build tribulation avg CP sorted by correct rank order (DG strongest → BI weakest)
     const tribCP = {};
@@ -126,9 +128,19 @@ export default function AdvancedStatistics() {
         <GlassCard variant="cyan">
           <div className="flex items-center gap-2 mb-2">
             <ScatterChart size={15} style={{ color: 'var(--azure-bright)' }}/>
-            <h2 className="text-sm font-display font-bold gradient-text">Total Finals vs CP</h2>
+            <h2 className="text-sm font-display font-bold gradient-text">Finals · CP · FDU — 3D Scatter</h2>
           </div>
-          <ChartContainer option={scatterChart(stats.scatterData)} ratio={9/16} maxHeight={340} />
+          <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 6 }}>Drag to rotate · Scroll/pinch to zoom · Color = Tribulation tier</div>
+          <ChartContainer option={scatter3DChart(stats.scatterData, Math.round(400 - zoom3DScatter * 3.2))} ratio={3/4} maxHeight={430} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(46,155,229,0.08)' }}>
+            <ZoomOut size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+            <input
+              type="range" min={1} max={100} step={1} value={zoom3DScatter}
+              onChange={e => setZoom3DScatter(Number(e.target.value))}
+              style={{ flex: 1, accentColor: 'var(--azure-bright)', cursor: 'pointer', height: 22, touchAction: 'none' }}
+            />
+            <ZoomIn size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+          </div>
         </GlassCard>
 
         <GlassCard variant="purple">
@@ -254,40 +266,50 @@ export default function AdvancedStatistics() {
   );
 }
 
-function scatterChart(data) {
-  const maxCP = Math.max(...data.map(d => d[1]), 1);
+function scatter3DChart(data, distance = 160) {
+  if (!data.length) return { series: [] };
+  const isMobile = window.innerWidth < 640;
   return {
     tooltip: {
       trigger: 'item', backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
-      formatter: p => `<b>${p.data[2]}</b><br/>Finals: ${p.data[0]}<br/>CP: ${formatCP(p.data[1])}`,
+      formatter: p => {
+        const [finals, cp, fdu, player] = p.value;
+        return `<b>${player}</b><br/>Finals: ${finals}<br/>CP: ${formatCP(cp)}<br/>FDU: ${fdu || 0}`;
+      },
     },
-    grid: { left: 56, right: 16, top: 16, bottom: 42 },
-    xAxis: {
-      name: 'Total Finals', nameTextStyle: { ...T, fontSize: 9 }, type: 'value',
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { ...T, fontSize: 9 },
-      splitLine: { lineStyle: SL },
+    grid3D: {
+      viewControl: { distance, elevation: 20, azimuth: -35, autoRotate: false },
+      environment: 'rgba(0,0,0,0)',
+      light: { main: { intensity: 1.2 }, ambient: { intensity: 0.4 } },
+      axisLine:    { lineStyle: { color: 'rgba(201,146,11,0.22)' } },
+      splitLine:   { lineStyle: { color: 'rgba(201,146,11,0.06)' } },
+      axisPointer: { lineStyle: { color: 'rgba(212,168,67,0.5)', width: 1 } },
     },
-    yAxis: {
-      name: 'CP', nameTextStyle: { ...T, fontSize: 9 }, type: 'value',
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { ...T, fontSize: 9, formatter: v => formatCP(v) },
-      splitLine: { lineStyle: SL },
+    xAxis3D: {
+      name: isMobile ? 'Finals' : 'Total Finals', nameTextStyle: { ...T, fontSize: isMobile ? 8 : 9 },
+      axisLabel: { ...T, fontSize: isMobile ? 7 : 8 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
+    },
+    yAxis3D: {
+      name: 'CP', nameTextStyle: { ...T, fontSize: isMobile ? 8 : 9 },
+      axisLabel: { ...T, fontSize: isMobile ? 7 : 8, formatter: v => formatCP(v) },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
+    },
+    zAxis3D: {
+      name: 'FDU', nameTextStyle: { ...T, fontSize: isMobile ? 8 : 9 },
+      axisLabel: { ...T, fontSize: isMobile ? 7 : 8 },
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
     },
     series: [{
-      type: 'scatter', data,
-      symbolSize: v => Math.max(4, Math.min(14, v[1] / 200)),
-      itemStyle: {
-        color: p => {
-          const norm = p.value[1] / maxCP;
-          // interpolate sapphire #2E9BE5 → gold #D4A843
-          const r = Math.round(212 * norm + 46  * (1 - norm));
-          const g = Math.round(168 * norm + 155 * (1 - norm));
-          const b = Math.round(67  * norm + 229 * (1 - norm));
-          return `rgba(${r},${g},${b},0.75)`;
-        },
-      },
+      type: 'scatter3D',
+      data: data.map(d => ({
+        value: d.value,
+        name: d.value[3],
+        itemStyle: { color: tribColor(d.trib) || '#4B5563', opacity: 0.82 },
+      })),
+      symbolSize: isMobile ? 4 : 5,
+      emphasis: { itemStyle: { opacity: 1, shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.38)' } },
     }],
   };
 }
@@ -303,7 +325,7 @@ function tribAvgChart(tribAvg) {
         return `<b style="color:${tribColor(t.trib)}">${t.trib}</b><br/>Avg CP: ${formatCP(t.avgCP)}<br/>Cultivators: ${t.count}`;
       },
     },
-    grid: { left: 56, right: 16, top: 16, bottom: 42 },
+    grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
     xAxis: {
       type: 'category', data: tribAvg.map(t => t.trib),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
@@ -333,7 +355,7 @@ function fduFddChart(data) {
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => `<b>${p.data[2]}</b><br/>FDU: ${p.data[0]}<br/>FDD: ${p.data[1]}`,
     },
-    grid: { left: 56, right: 16, top: 16, bottom: 42 },
+    grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
     xAxis: {
       name: 'FDU', nameTextStyle: { ...T, fontSize: 9 }, type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
@@ -375,7 +397,7 @@ function boxPlotChart(boxData) {
           Max: ${formatCP(max)}<br/>Q3: ${formatCP(q3)}<br/>Median: ${formatCP(med)}<br/>Q1: ${formatCP(q1)}<br/>Min: ${formatCP(min)}`;
       },
     },
-    grid: { left: 56, right: 16, top: 12, bottom: 48 },
+    grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
     xAxis: {
       type: 'category',
       data: boxData.map(b => b.tier),
@@ -426,7 +448,7 @@ function heatmapChart(heatData) {
       inRange: { color: ['rgba(155,89,182,0.15)', '#9B59B6', '#D4A843'] },
       textStyle: { color: '#8B7E6A', fontSize: 9 },
     },
-    grid: { left: 48, right: 16, top: 12, bottom: 52 },
+    grid: { left: 8, right: 8, top: 12, bottom: 40, containLabel: true },
     xAxis: {
       type: 'category',
       data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDU + i * step)}`),

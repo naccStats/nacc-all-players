@@ -61,7 +61,7 @@ export default function GuildComparison() {
           return `<b style="color:${tribColor(tier) || '#EDE0C4'}">${tier}</b><br/>${lines}`;
         },
       },
-      grid: { left: 44, right: 44, top: 12, bottom: 28 },
+      grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
       xAxis: {
         type: 'value',
         axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
@@ -134,7 +134,7 @@ export default function GuildComparison() {
         <div className="flex items-center gap-2 mb-3">
           <Swords size={15} style={{ color: 'var(--gold-bright)' }} />
           <h1 style={{ fontFamily: 'var(--font-title)', fontSize: 14, fontWeight: 700, color: '#EDE0C4', letterSpacing: '0.1em' }}>
-            Guild Comparison — Trial of Two Guilds
+            Guild Comparison — Trial of Two Sects
           </h1>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} className="md:flex-row md:items-end">
