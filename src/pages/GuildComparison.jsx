@@ -134,7 +134,7 @@ export default function GuildComparison() {
         <div className="flex items-center gap-2 mb-3">
           <Swords size={15} style={{ color: 'var(--gold-bright)' }} />
           <h1 style={{ fontFamily: 'var(--font-title)', fontSize: 14, fontWeight: 700, color: '#EDE0C4', letterSpacing: '0.1em' }}>
-            Guild Comparison — Trial of Two Sects
+            Guild Comparison — Trial of Two Guilds
           </h1>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} className="md:flex-row md:items-end">
