@@ -3,6 +3,7 @@ import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
 import { tribColor } from '../utils/tribulationSystem';
 import { computeGlobalStats } from '../utils/statsEngine';
+import { bp, rGrid, rLabel, rValueLabel } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
 import ChartContainer from '../components/ChartContainer';
@@ -40,8 +41,9 @@ function getTribColor(t) {
 }
 
 /* ─── Chart builders ─────────────────────────────────────────────────────── */
-function buildGuildChart(topGuilds) {
+function buildGuildChart(topGuilds, w = 400) {
   if (!topGuilds?.length) return { series: [] };
+  const { pick } = bp(w);
   const guilds = topGuilds.slice(0, 15);
   const colors = ['#D4A843','#CB4335','#9B59B6','#2E9BE5','#1EBD82',
                   '#D4813A','#5D7FC2','#B03A8E','#17A272','#E8C46A',
@@ -55,11 +57,11 @@ function buildGuildChart(topGuilds) {
           Members: ${g.members}`;
       },
     },
-    grid: { left: 8, right: 16, top: 8, bottom: 8, containLabel: true },
+    grid: rGrid(w, { right: 16, top: 8 }),
     xAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: CHART_BORDER } },
-      axisLabel: { color: CHART_TEXT, fontSize: 9, formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), color: CHART_TEXT, formatter: v => formatCP(v) },
       splitLine: { lineStyle: { color: CHART_BORDER, type: 'dashed' } },
     },
     yAxis: {
@@ -67,7 +69,7 @@ function buildGuildChart(topGuilds) {
       inverse: true,
       data: guilds.map(g => g.name),
       axisLine: { lineStyle: { color: CHART_BORDER } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 100, overflow: 'truncate' },
+      axisLabel: { color: '#EDE0C4', ...rLabel(w, { width: pick(70, 100) }) },
     },
     series: [{
       type: 'bar', data: guilds.map(g => g.totalCP), barWidth: 11,
@@ -115,8 +117,9 @@ function buildTribChart(tribDist) {
   };
 }
 
-function buildCPDistributionChart(players) {
+function buildCPDistributionChart(players, w = 400) {
   if (!players.length) return { series: [] };
+  const { pick } = bp(w);
   const cps = players.map(p => p.cp || 0).filter(v => v > 0).sort((a, b) => a - b);
   const bins = 20;
   const min = cps[0]; const max = cps[cps.length - 1];
@@ -134,16 +137,16 @@ function buildCPDistributionChart(players) {
     tooltip: { ...baseTooltip, trigger: 'axis',
       formatter: p => `Range: ${labels[p[0].dataIndex]}<br/>Count: <b>${p[0].value}</b>`,
     },
-    grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
+    grid: rGrid(w),
     xAxis: {
       type: 'category', data: labels,
       axisLine: { lineStyle: { color: CHART_BORDER } },
-      axisLabel: { color: CHART_TEXT, fontSize: 8, rotate: 30 },
+      axisLabel: { ...rLabel(w, { rotate: pick(45, 30) }), color: CHART_TEXT },
     },
     yAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: CHART_BORDER } },
-      axisLabel: { color: CHART_TEXT, fontSize: 9 },
+      axisLabel: { ...rValueLabel(w), color: CHART_TEXT },
       splitLine: { lineStyle: { color: CHART_BORDER, type: 'dashed' } },
     },
     series: [{
@@ -428,7 +431,7 @@ export default function Dashboard() {
               Guild Power Rankings
             </h2>
           </div>
-          <ChartContainer option={buildGuildChart(stats.topGuilds)} ratio={9/16} maxHeight={320} />
+          <ChartContainer option={(w) => buildGuildChart(stats.topGuilds, w)} type="bar" maxHeight={320} />
         </GlassCard>
 
         <GlassCard variant="purple" delay={0.45}>
@@ -438,7 +441,7 @@ export default function Dashboard() {
               Tribulation Distribution
             </h2>
           </div>
-          <ChartContainer option={buildTribChart(stats.tribDistribution)} ratio={3/4} maxHeight={320} />
+          <ChartContainer option={buildTribChart(stats.tribDistribution)} type="pie" maxHeight={260} />
         </GlassCard>
       </div>
 
@@ -451,7 +454,7 @@ export default function Dashboard() {
               CP Distribution
             </h2>
           </div>
-          <ChartContainer option={buildCPDistributionChart(players)} ratio={9/16} maxHeight={340} />
+          <ChartContainer option={(w) => buildCPDistributionChart(players, w)} type="bar" />
         </GlassCard>
 
         <GlassCard variant="gold" delay={0.55}>

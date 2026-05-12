@@ -1,6 +1,7 @@
 import { useContext, useMemo } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
+import { bp, rGrid, rValueLabel } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion } from 'framer-motion';
@@ -65,36 +66,39 @@ export default function ChaosBestiary() {
   /* ── Dominance bar chart ─────────────────────────────────────────────── */
   const dominanceOption = useMemo(() => {
     const sorted = [...BEASTS].sort((a, b) => beastData.map[b].totalCP - beastData.map[a].totalCP);
-    return {
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
-        textStyle: { color: '#EDE0C4', fontSize: 11 },
-        formatter: p => {
-          const b = sorted[p[0].dataIndex];
-          const d = beastData.map[b];
-          return `<b style="color:${BEAST_COLORS[b]}">${b}</b><br/>Total CP: <b>${formatCP(d.totalCP)}</b><br/>Owners: ${d.count}`;
+    return (w) => {
+      const { pick } = bp(w);
+      return {
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
+          textStyle: { color: '#EDE0C4', fontSize: 11 },
+          formatter: p => {
+            const b = sorted[p[0].dataIndex];
+            const d = beastData.map[b];
+            return `<b style="color:${BEAST_COLORS[b]}">${b}</b><br/>Total CP: <b>${formatCP(d.totalCP)}</b><br/>Owners: ${d.count}`;
+          },
         },
-      },
-      grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
-      xAxis: {
-        type: 'value',
-        axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-        axisLabel: { color: CT, fontSize: 9, formatter: v => formatCP(v) },
-        splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
-      },
-      yAxis: {
-        type: 'category', inverse: true, data: sorted,
-        axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-        axisLabel: { color: '#EDE0C4', fontSize: 11, fontWeight: 600 },
-      },
-      series: [{
-        type: 'bar',
-        data: sorted.map(b => ({ value: beastData.map[b].totalCP, itemStyle: { color: BEAST_COLORS[b] } })),
-        barWidth: 22,
-        itemStyle: { borderRadius: [0, 6, 6, 0] },
-        emphasis: { itemStyle: { shadowBlur: 13 } },
-      }],
+        grid: rGrid(w),
+        xAxis: {
+          type: 'value',
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          axisLabel: { ...rValueLabel(w), formatter: v => formatCP(v) },
+          splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+        },
+        yAxis: {
+          type: 'category', inverse: true, data: sorted,
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          axisLabel: { color: '#EDE0C4', fontSize: pick(9, 11), fontWeight: 600 },
+        },
+        series: [{
+          type: 'bar',
+          data: sorted.map(b => ({ value: beastData.map[b].totalCP, itemStyle: { color: BEAST_COLORS[b] } })),
+          barWidth: 22,
+          itemStyle: { borderRadius: [0, 6, 6, 0] },
+          emphasis: { itemStyle: { shadowBlur: 13 } },
+        }],
+      };
     };
   }, [beastData]);
 
@@ -134,31 +138,34 @@ export default function ChaosBestiary() {
     const labels = [...BEASTS, 'No Chaos'];
     const values = [...BEASTS.map(b => beastData.map[b].avgCP), beastData.noChaosAvgCP];
     const colors = [...BEASTS.map(b => BEAST_COLORS[b]), '#4B5563'];
-    return {
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
-        textStyle: { color: '#EDE0C4', fontSize: 11 },
-        formatter: p => `<b style="color:${colors[p[0].dataIndex]}">${labels[p[0].dataIndex]}</b><br/>Avg CP: <b>${formatCP(p[0].value)}</b>`,
-      },
-      grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
-      xAxis: {
-        type: 'category', data: labels,
-        axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-        axisLabel: { color: '#EDE0C4', fontSize: 10 },
-      },
-      yAxis: {
-        type: 'value',
-        axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-        axisLabel: { color: CT, fontSize: 9, formatter: v => formatCP(v) },
-        splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
-      },
-      series: [{
-        type: 'bar',
-        data: values.map((v, i) => ({ value: v, itemStyle: { color: colors[i], borderRadius: [4, 4, 0, 0] } })),
-        barWidth: '50%',
-        emphasis: { itemStyle: { shadowBlur: 13, shadowColor: 'rgba(212,168,67,0.28)' } },
-      }],
+    return (w) => {
+      const { pick } = bp(w);
+      return {
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
+          textStyle: { color: '#EDE0C4', fontSize: 11 },
+          formatter: p => `<b style="color:${colors[p[0].dataIndex]}">${labels[p[0].dataIndex]}</b><br/>Avg CP: <b>${formatCP(p[0].value)}</b>`,
+        },
+        grid: rGrid(w, { top: 16 }),
+        xAxis: {
+          type: 'category', data: labels,
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          axisLabel: { color: '#EDE0C4', fontSize: pick(8, 10) },
+        },
+        yAxis: {
+          type: 'value',
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          axisLabel: { ...rValueLabel(w), formatter: v => formatCP(v) },
+          splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
+        },
+        series: [{
+          type: 'bar',
+          data: values.map((v, i) => ({ value: v, itemStyle: { color: colors[i], borderRadius: [4, 4, 0, 0] } })),
+          barWidth: '50%',
+          emphasis: { itemStyle: { shadowBlur: 13, shadowColor: 'rgba(212,168,67,0.28)' } },
+        }],
+      };
     };
   }, [beastData]);
 
@@ -181,7 +188,7 @@ export default function ChaosBestiary() {
 
       {/* Beast cards — 1 col mobile, 2 cols sm, 4 cols xl */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        {BEASTS.map((beast, i) => {
+        {[...BEASTS].sort((a, b) => beastData.map[b].count - beastData.map[a].count).map((beast, i) => {
           const d     = beastData.map[beast];
           const color = BEAST_COLORS[beast];
           const above = d.cpDelta >= 0;
@@ -241,7 +248,7 @@ export default function ChaosBestiary() {
             <Zap size={14} style={{ color: 'var(--cinnabar-bright)' }} />
             <h2 className="text-sm font-display font-bold gradient-text">Beast Dominance — Total CP</h2>
           </div>
-          <ChartContainer option={dominanceOption} ratio={9 / 16} maxHeight={260} />
+          <ChartContainer option={dominanceOption} type="bar" maxHeight={260} />
         </GlassCard>
 
         <GlassCard variant="purple">
@@ -249,7 +256,7 @@ export default function ChaosBestiary() {
             <Users size={14} style={{ color: 'var(--imperial-bright)' }} />
             <h2 className="text-sm font-display font-bold gradient-text">Beast Popularity</h2>
           </div>
-          <ChartContainer option={popularityOption} ratio={3 / 4} maxHeight={280} />
+          <ChartContainer option={popularityOption} type="pie" maxHeight={280} />
         </GlassCard>
       </div>
 
@@ -259,7 +266,7 @@ export default function ChaosBestiary() {
           <Shield size={14} style={{ color: 'var(--azure-bright)' }} />
           <h2 className="text-sm font-display font-bold gradient-text">Avg CP by Beast — vs No Chaos</h2>
         </div>
-        <ChartContainer option={avgCPOption} ratio={9 / 16} maxHeight={260} />
+          <ChartContainer option={avgCPOption} type="bar" maxHeight={260} />
       </GlassCard>
     </motion.div>
   );

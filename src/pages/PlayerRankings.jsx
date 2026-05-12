@@ -1,10 +1,12 @@
-import { useContext, useState, useMemo, useEffect } from 'react';
+import { useContext, useState, useMemo, useCallback } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP, formatNumber } from '../utils/formatters';
 import { tribColor, tribRank } from '../utils/tribulationSystem';
 import GlassCard from '../components/GlassCard';
+import { SkeletonTableRows, SkeletonCard } from '../components/Skeleton';
 import SearchBar from '../components/SearchBar';
 import { FilterSelect } from '../components/FilterBar';
+import { useToast } from '../hooks/useToast';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -12,20 +14,16 @@ import { useNavigate } from 'react-router-dom';
 export default function PlayerRankings() {
   const rawPlayers = useContext(PlayerContext);
   const navigate   = useNavigate();
+  const { toast, ToastContainer } = useToast();
   const [search, setSearch] = useState('');
   const [guildFilter, setGuildFilter] = useState('all');
   const [chaosFilter, setChaosFilter] = useState('all');
   const [sortField, setSortField] = useState('cp');
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
-  const perPage = 30;
+  const [perPage, setPerPage] = useState(30);
 
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
+  const PER_PAGE_OPTIONS = [10, 30, 50, 100];
 
   const guilds = useMemo(
     () => [...new Set((rawPlayers || []).map(p => p.guild).filter(Boolean))].sort(),
@@ -69,7 +67,7 @@ export default function PlayerRankings() {
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   /* Export CSV */
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     const headers = ['Rank','Player','Guild','UID','CP','Tribulation','FDU','FDD','Total Finals','Has Chaos','Beast'];
     const rows = filtered.map((p, i) => [
       i + 1, p.player, p.guild || '', p.uid, p.cp || 0,
@@ -84,7 +82,8 @@ export default function PlayerRankings() {
     const a    = document.createElement('a');
     a.href = url; a.download = 'cultivators-export.csv'; a.click();
     URL.revokeObjectURL(url);
-  };
+    toast(`Export complete — ${filtered.length} records`, 'jade');
+  }, [filtered, toast]);
 
   const SORT_OPTIONS = [
     { value: 'cp',          label: 'CP'     },
@@ -96,10 +95,12 @@ export default function PlayerRankings() {
 
   if (!rawPlayers?.length) {
     return (
-      <GlassCard style={{ textAlign: 'center', padding: '40px 20px' }}>
-        <Search size={32} style={{ color: '#4B5563', margin: '0 auto 12px' }}/>
-        <p style={{ fontSize: 12, color: 'var(--muted)' }}>Loading cultivation records...</p>
-      </GlassCard>
+      <div className="space-y-4">
+        <SkeletonCard lines={3} height={90} />
+        <GlassCard className="overflow-hidden p-0">
+          <SkeletonTableRows rows={8} />
+        </GlassCard>
+      </div>
     );
   }
 
@@ -114,6 +115,12 @@ export default function PlayerRankings() {
     transition: 'color 0.2s',
     fontFamily: 'var(--font-title)',
     whiteSpace: 'nowrap',
+    position: 'sticky',
+    top: 0,
+    background: 'rgba(13,7,24,0.97)',
+    backdropFilter: 'blur(12px)',
+    zIndex: 2,
+    boxShadow: '0 1px 0 rgba(201,146,11,0.15)',
   });
 
   return (
@@ -185,8 +192,26 @@ export default function PlayerRankings() {
           </button>
         </div>
 
-        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span>{filtered.length} cultivators{guildFilter !== 'all' ? ` · ${guildFilter}` : ''}</span>
+        <div style={{ marginTop: 8, fontSize: 10, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span>{filtered.length} cultivators{guildFilter !== 'all' ? ` · ${guildFilter}` : ''}</span>
+            {/* Per-page selector */}
+            <span style={{ color: 'rgba(201,146,11,0.3)' }}>·</span>
+            <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Per page</span>
+            <div style={{ display: 'flex', gap: 3 }}>
+              {PER_PAGE_OPTIONS.map(n => (
+                <button key={n} onClick={() => { setPerPage(n); setPage(1); }}
+                  style={{
+                    padding: '2px 8px', borderRadius: 12, fontSize: 9, cursor: 'pointer',
+                    fontFamily: 'var(--font-title)',
+                    background: perPage === n ? 'rgba(201,146,11,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: perPage === n ? 'var(--gold-bright)' : 'var(--muted)',
+                    border: perPage === n ? '1px solid rgba(201,146,11,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                    transition: 'all 0.15s',
+                  }}>{n}</button>
+              ))}
+            </div>
+          </div>
           <button
             onClick={handleExport}
             style={{
@@ -203,8 +228,7 @@ export default function PlayerRankings() {
       </GlassCard>
 
       {/* ── Mobile card list ── */}
-      {isMobile && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div className="md:hidden" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {paged.map((p, i) => {
             const rank = (page - 1) * perPage + i + 1;
             const isTop = rank <= 3;
@@ -299,12 +323,24 @@ export default function PlayerRankings() {
               </motion.div>
             );
           })}
+      </div>
+
+      {/* Empty state for mobile */}
+      {filtered.length === 0 && (
+        <div className="md:hidden">
+          <GlassCard style={{ textAlign: 'center', padding: '32px 20px' }}>
+            <Search size={28} style={{ color: '#4B5563', margin: '0 auto 10px', display: 'block' }} />
+            <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>No cultivators found in these records.</p>
+            <button onClick={() => { setSearch(''); setGuildFilter('all'); setChaosFilter('all'); }}
+              style={{ fontSize: 10, color: 'var(--gold-bright)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+              Clear filters
+            </button>
+          </GlassCard>
         </div>
       )}
 
       {/* ── Desktop table ── */}
-      {!isMobile && (
-        <GlassCard className="overflow-hidden p-0">
+      <GlassCard className="overflow-hidden p-0 hidden md:block">
           <div className="overflow-x-auto">
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
@@ -409,9 +445,19 @@ export default function PlayerRankings() {
             </table>
           </div>
         </GlassCard>
+
+      {/* Empty state for desktop */}
+      {filtered.length === 0 && (
+        <GlassCard className="hidden md:block" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <Search size={28} style={{ color: '#4B5563', margin: '0 auto 10px', display: 'block' }} />
+          <p style={{ fontSize: 12, color: 'var(--muted)', marginBottom: 6 }}>No cultivators match the current filters.</p>
+          <button onClick={() => { setSearch(''); setGuildFilter('all'); setChaosFilter('all'); }}
+            style={{ fontSize: 10, color: 'var(--gold-bright)', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline' }}>
+            Clear all filters
+          </button>
+        </GlassCard>
       )}
 
-      {/* ── Pagination (shared) ── */}
       <GlassCard>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 10, color: 'var(--muted)' }}>
@@ -455,6 +501,7 @@ export default function PlayerRankings() {
           </div>
         </div>
       </GlassCard>
+      <ToastContainer />
     </motion.div>
   );
 }

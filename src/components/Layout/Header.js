@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useDataContext } from '../../context/DataContext';
 import { formatTime, formatCP } from '../../utils/formatters';
 import { tribColor, tribLabel } from '../../utils/tribulationSystem';
@@ -8,11 +9,32 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = ({ onMenuClick }) => {
   const { lastUpdated, players } = useDataContext();
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const debounced = useDebounce(query, 250);
-  const boxRef = useRef(null);
+  const boxRef  = useRef(null);
+  const inputRef = useRef(null);
+
+  // Cmd+K / Ctrl+K → focus search
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setFocused(true);
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+      if (e.key === 'Escape') {
+        setFocused(false);
+        setSelectedPlayer(null);
+        inputRef.current?.blur();
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
 
   const results = debounced.length >= 2
     ? (players || []).filter(p =>
@@ -59,14 +81,16 @@ const Header = ({ onMenuClick }) => {
       </div>
 
       <div className="header-right">
-        <div className="search-box" ref={boxRef}>
+        <div className="search-box" ref={boxRef} aria-expanded={showDrop || showPanel}>
           <input
             type="text"
+            ref={inputRef}
             placeholder="Search cultivator, guild, UID..."
             value={query}
             onChange={e => { setQuery(e.target.value); setSelectedPlayer(null); }}
             onFocus={() => setFocused(true)}
             aria-label="Search players"
+            title="Press ⌘K to focus"
           />
 
           {/* Search results dropdown */}
@@ -167,6 +191,12 @@ const Header = ({ onMenuClick }) => {
                     ? <span style={{ color: 'var(--muted)' }}>● AFK</span>
                     : <span style={{ color: '#00E87C' }}>● Active</span>
                   }
+                  <button
+                    className="spp-profile-btn"
+                    onClick={() => { setSelectedPlayer(null); navigate('/player/' + selectedPlayer.uid); }}
+                  >
+                    View Full Profile →
+                  </button>
                 </div>
               </motion.div>
             )}

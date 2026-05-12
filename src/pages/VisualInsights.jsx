@@ -4,6 +4,7 @@ import Papa from 'papaparse';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
 import { tribColor, tribLabel } from '../utils/tribulationSystem';
+import { bp, rGrid, rLabel, rValueLabel, rNameText } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,7 +12,6 @@ import { Radar, Flame, Users, Zap, ScatterChart, BarChart2 } from 'lucide-react'
 
 const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
 const SL = { color: 'rgba(201,146,11,0.08)', type: 'dashed' };
-const TX = '#8B7E6A';
 
 export default function VisualInsights() {
   const rawPlayers = useContext(PlayerContext);
@@ -19,6 +19,7 @@ export default function VisualInsights() {
 
   /* ── Load topPlayers.csv for the radar ─────────────────────────────── */
   const [topPlayers, setTopPlayers] = useState([]);
+  const [hvRole, setHvRole] = useState(null); // 'Healer' | 'Fighter' | 'Balanced' | null
   useEffect(() => {
     const url = `${process.env.PUBLIC_URL}/data/topPlayers.csv`;
     fetch(url)
@@ -205,7 +206,7 @@ export default function VisualInsights() {
             <Zap size={15} style={{ color: 'var(--imperial-bright)' }}/>
             <h2 className="text-sm font-display font-bold gradient-text">Guild Avg CP — Top 10</h2>
           </div>
-          <ChartContainer option={guildAvgChart(insights.guildAvgData)} ratio={9/16} maxHeight={320} />
+          <ChartContainer option={(w) => guildAvgChart(insights.guildAvgData, w)} type="bar" maxHeight={320} />
         </GlassCard>
       </div>
 
@@ -262,15 +263,112 @@ export default function VisualInsights() {
               <h2 className="text-sm font-display font-bold gradient-text">Healers vs Fighters</h2>
             </div>
             <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 6 }}>X = Total Heal · Y = Total Beast · size = CP</div>
-            <ChartContainer option={healerFighterChart(topPlayerRows)} ratio={9 / 16} maxHeight={340} />
+            <ChartContainer option={(w) => healerFighterChart(topPlayerRows, hvRole, w)} type="scatter" maxHeight={260} />
+            {/* Role legend */}
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, paddingTop: 8, borderTop: '1px solid rgba(46,155,229,0.1)', flexWrap: 'wrap' }}>
+              {ROLE_ORDER.map(role => {
+                const color = ROLE_COLOR[role];
+                const isActive = hvRole === role;
+                return (
+                  <button
+                    key={role}
+                    onMouseEnter={() => setHvRole(role)}
+                    onMouseLeave={() => setHvRole(null)}
+                    onClick={() => setHvRole(isActive ? null : role)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '4px 12px 4px 8px', borderRadius: 20,
+                      background: isActive ? `${color}20` : 'rgba(255,255,255,0.03)',
+                      border: `1px solid ${isActive ? color : 'rgba(255,255,255,0.08)'}`,
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                  >
+                    <div style={{
+                      width: 9, height: 9, borderRadius: '50%',
+                      background: color,
+                      boxShadow: isActive ? `0 0 10px ${color}` : 'none',
+                      transition: 'box-shadow 0.15s',
+                      flexShrink: 0,
+                    }} />
+                    <span style={{
+                      fontSize: 10, fontFamily: 'var(--font-title)',
+                      color: isActive ? color : 'var(--muted)',
+                      fontWeight: isActive ? 700 : 400,
+                      letterSpacing: '0.05em',
+                      transition: 'color 0.15s',
+                    }}>{role}</span>
+                  </button>
+                );
+              })}
+            </div>
           </GlassCard>
 
           <GlassCard variant="gold">
             <div className="flex items-center gap-2 mb-2">
               <BarChart2 size={14} style={{ color: 'var(--gold-bright)' }} />
-              <h2 className="text-sm font-display font-bold gradient-text-gold">Beast Efficiency — Up vs Down</h2>
+              <h2 className="text-sm font-display font-bold gradient-text-gold">Heal &amp; Beast Efficiency</h2>
             </div>
-            <ChartContainer option={beastEfficiencyChart(topPlayerRows)} ratio={9 / 16} maxHeight={340} />
+            {/* Legend row */}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+              {[['Heal Up','#1EBD82'],['Heal Down','#14B8A6'],['Beast Up','#00BFFF'],['Beast Down','#B026FF']].map(([label, color]) => (
+                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 9, color: 'var(--muted)' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+            {/* Player rows */}
+            {(() => {
+              const sorted = [...topPlayerRows].sort((a, b) => (b.totalHeal + b.totalBeast) - (a.totalHeal + a.totalBeast));
+              const maxHU = Math.max(...sorted.map(r => r.healUp),  1);
+              const maxHD = Math.max(...sorted.map(r => r.healDown), 1);
+              const maxBU = Math.max(...sorted.map(r => r.beastUp),  1);
+              const maxBD = Math.max(...sorted.map(r => r.beastDown),1);
+              const metrics = [
+                { key: 'healUp',    max: maxHU, color: '#1EBD82' },
+                { key: 'healDown',  max: maxHD, color: '#14B8A6' },
+                { key: 'beastUp',   max: maxBU, color: '#00BFFF' },
+                { key: 'beastDown', max: maxBD, color: '#B026FF' },
+              ];
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
+                  {sorted.map((p, i) => (
+                    <div key={p.player} style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      padding: '7px 10px', borderRadius: 8,
+                      background: i === 0 ? 'rgba(201,146,11,0.07)' : 'rgba(5,0,15,0.35)',
+                      border: `1px solid ${i === 0 ? 'rgba(201,146,11,0.2)' : 'rgba(255,255,255,0.04)'}`,
+                    }}>
+                      {/* Rank + name */}
+                      <div style={{ width: 16, textAlign: 'right', fontSize: 9, color: 'var(--muted)', flexShrink: 0, fontFamily: 'monospace' }}>
+                        {i + 1}
+                      </div>
+                      <div style={{ width: 76, flexShrink: 0, fontSize: 10, color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: i === 0 ? 700 : 400 }}>
+                        {p.player}
+                      </div>
+                      {/* 4 metric bars */}
+                      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3px 8px', minWidth: 0 }}>
+                        {metrics.map(({ key, max, color }) => (
+                          <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                            <div style={{ flex: 1, height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', minWidth: 0 }}>
+                              <div style={{
+                                height: '100%', borderRadius: 999,
+                                width: `${Math.round((p[key] / max) * 100)}%`,
+                                background: color,
+                                boxShadow: `0 0 4px ${color}88`,
+                              }} />
+                            </div>
+                            <span style={{ fontSize: 8, color, fontFamily: 'monospace', flexShrink: 0, minWidth: 24, textAlign: 'right' }}>
+                              {p[key].toLocaleString()}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </GlassCard>
         </div>
       )}
@@ -575,19 +673,20 @@ function SvgRadar({ data }) {
   );
 }
 
-function guildAvgChart(data) {
+function guildAvgChart(data, w = 400) {
   if (!data.length) return { series: [] };
+  const { pick } = bp(w);
   return {
     tooltip: {
       trigger: 'axis', backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => `<b>${p[0].name}</b><br/>Avg CP: ${formatCP(p[0].value)}`,
     },
-    grid: { left: 8, right: 8, top: 10, bottom: 8, containLabel: true },
+    grid: rGrid(w, { top: 10 }),
     xAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: TX, fontSize: 9, formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), formatter: v => formatCP(v) },
       splitLine: { lineStyle: SL },
     },
     yAxis: {
@@ -595,7 +694,7 @@ function guildAvgChart(data) {
       inverse: true,
       data: data.map(d => d.name),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, width: 90, overflow: 'truncate' },
+      axisLabel: { color: '#EDE0C4', ...rLabel(w, { width: pick(70, 90) }) },
     },
     series: [{
       type: 'bar', data: data.map(d => d.avg), barWidth: 10,
@@ -614,12 +713,18 @@ function guildAvgChart(data) {
 }
 
 /* ─── Healers vs Fighters scatter ────────────────────────────────────────── */
-const VI_PALETTE = ['#C9920B','#FF3B2B','#B026FF','#00BFFF','#00E87C','#FF8C42','#6B8AFF','#EC4899','#14B8A6','#F59E0B'];
+const ROLE_COLOR = { Healer: '#1EBD82', Balanced: '#D4A843', Fighter: '#CB4335' };
+const ROLE_ORDER = ['Healer', 'Balanced', 'Fighter'];
 
-function healerFighterChart(rows) {
+function getRole(totalHeal, totalBeast) {
+  const ratio = totalHeal + totalBeast > 0 ? totalHeal / (totalHeal + totalBeast) : 0.5;
+  return ratio > 0.6 ? 'Healer' : ratio < 0.4 ? 'Fighter' : 'Balanced';
+}
+
+function healerFighterChart(rows, hlRole = null, w = 400) {
   if (!rows.length) return { series: [] };
-  const guilds  = [...new Set(rows.map(r => r.guild))];
-  const maxCP   = Math.max(...rows.map(r => r.cp), 1);
+  const maxCP = Math.max(...rows.map(r => r.cp), 1);
+  const hasHl = !!hlRole;
   return {
     tooltip: {
       trigger: 'item',
@@ -627,80 +732,49 @@ function healerFighterChart(rows) {
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => {
         const [totalHeal, totalBeast, name, guild, cp] = p.value;
-        const ratio = totalHeal + totalBeast > 0 ? totalHeal / (totalHeal + totalBeast) : 0.5;
-        const role  = ratio > 0.6 ? 'Healer' : ratio < 0.4 ? 'Fighter' : 'Balanced';
-        return `<b>${name}</b><br/>${guild}<br/>Heal: ${totalHeal.toFixed(1)} · Beast: ${totalBeast.toFixed(1)}<br/>Role: <b style="color:${p.color}">${role}</b><br/>CP: ${formatCP(cp)}`;
+        const role = getRole(totalHeal, totalBeast);
+        return `<b>${name}</b><br/>${guild}<br/>Heal: ${totalHeal.toFixed(1)} · Beast: ${totalBeast.toFixed(1)}<br/>Role: <b style="color:${ROLE_COLOR[role]}">${role}</b><br/>CP: ${formatCP(cp)}`;
       },
     },
-    grid: { left: 8, right: 8, top: 24, bottom: 8, containLabel: true },
+    grid: rGrid(w, { top: 24 }),
     xAxis: {
-      name: 'Total Heal', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      name: 'Total Heal', nameTextStyle: rNameText(w),
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      axisLabel: rValueLabel(w),
       splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
     },
     yAxis: {
-      name: 'Total Beast', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      name: 'Total Beast', nameTextStyle: rNameText(w),
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 9 },
+      axisLabel: rValueLabel(w),
       splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
     },
-    series: [{
-      type: 'scatter',
-      data: rows.map(r => [r.totalHeal, r.totalBeast, r.player, r.guild, r.cp]),
-      symbolSize: v => Math.max(7, Math.min(22, (v[4] / maxCP) * 24 + 5)),
-      itemStyle: { color: p => VI_PALETTE[guilds.indexOf(p.value[3]) % VI_PALETTE.length], opacity: 0.85 },
-      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(201,146,11,0.5)', opacity: 1 } },
-    }],
-  };
-}
-
-/* ─── Beast efficiency grouped bar ──────────────────────────────────────── */
-function beastEfficiencyChart(rows) {
-  if (!rows.length) return { series: [] };
-  const sorted = [...rows].sort((a, b) => b.totalBeast - a.totalBeast);
-  const names  = sorted.map(r => r.player);
-  return {
-    tooltip: {
-      trigger: 'axis', axisPointer: { type: 'shadow' },
-      backgroundColor: 'rgba(13,7,24,0.97)', borderColor: 'rgba(201,146,11,0.35)', borderWidth: 1,
-      textStyle: { color: '#EDE0C4', fontSize: 10 },
-    },
-    legend: {
-      bottom: 0, left: 'center',
-      textStyle: { color: '#8B7E6A', fontSize: 9 },
-      itemWidth: 8, itemHeight: 8,
-    },
-    grid: { left: 16, right: 16, top: 8, bottom: 44, containLabel: true },
-    xAxis: {
-      type: 'category',
-      data: names,
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#EDE0C4', fontSize: 8, rotate: 20, overflow: 'truncate', width: 70 },
-    },
-    yAxis: {
-      type: 'value',
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 9 },
-      splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
-    },
-    series: [
-      {
-        name: 'Beast Up', type: 'bar',
-        data: sorted.map(r => r.beastUp),
-        barWidth: '35%',
-        itemStyle: { color: '#00BFFF', borderRadius: [3, 3, 0, 0] },
-        emphasis: { itemStyle: { shadowBlur: 8 } },
-      },
-      {
-        name: 'Beast Down', type: 'bar',
-        data: sorted.map(r => r.beastDown),
-        barWidth: '35%',
-        itemStyle: { color: '#B026FF', borderRadius: [3, 3, 0, 0] },
-        emphasis: { itemStyle: { shadowBlur: 8 } },
-      },
-    ],
+    // Split into 3 series (one per role) so shadowBlur/opacity are plain values — callbacks don't work for shadow props in ECharts
+    series: ROLE_ORDER.map(role => {
+      const color   = ROLE_COLOR[role];
+      const isHl    = hasHl && role === hlRole;
+      const opacity = !hasHl ? 0.85 : (isHl ? 1 : 0.07);
+      return {
+        name: role,
+        type: 'scatter',
+        selectedMode: false,
+        data: rows
+          .filter(r => getRole(r.totalHeal, r.totalBeast) === role)
+          .map(r => [r.totalHeal, r.totalBeast, r.player, r.guild, r.cp]),
+        symbolSize: v => Math.max(7, Math.min(22, (v[4] / maxCP) * 24 + 5)),
+        itemStyle: {
+          color,
+          opacity,
+          shadowBlur:  isHl ? 22 : 0,
+          shadowColor: color,
+        },
+        emphasis: {
+          disabled: false,
+          itemStyle: { shadowBlur: 18, shadowColor: color, opacity: 1 },
+        },
+      };
+    }),
   };
 }

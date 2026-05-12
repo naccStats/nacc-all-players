@@ -6,6 +6,7 @@ import { formatCP } from '../utils/formatters';
 import { tribColor, tribLabel } from '../utils/tribulationSystem';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
+import { SkeletonCard, SkeletonBar, SkeletonStatCard } from '../components/Skeleton';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Shield, Zap, Crown, User } from 'lucide-react';
 
@@ -91,9 +92,22 @@ export default function PlayerProfile() {
 
   if (!players.length) {
     return (
-      <GlassCard style={{ textAlign: 'center', padding: '40px 20px' }}>
-        <p style={{ color: 'var(--muted)', fontSize: 12 }}>Loading records…</p>
-      </GlassCard>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {/* Header skeleton */}
+        <GlassCard style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <SkeletonBar width={40} height={40} borderRadius="50%" />
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <SkeletonBar width="40%" height={16} />
+            <SkeletonBar width="25%" height={10} />
+          </div>
+        </GlassCard>
+        {/* Stat cards skeleton */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: 12 }}>
+          {Array.from({ length: 5 }).map((_, i) => <SkeletonStatCard key={i} delay={i * 0.05} />)}
+        </div>
+        {/* Chart skeleton */}
+        <SkeletonCard lines={1} height={200} delay={0.2} />
+      </div>
     );
   }
 

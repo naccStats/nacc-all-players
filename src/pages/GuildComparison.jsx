@@ -3,6 +3,7 @@ import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
 import { tribColor } from '../utils/tribulationSystem';
 import { computeGuildStats } from '../utils/statsEngine';
+import { bp, rGrid, rValueLabel } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { FilterSelect } from '../components/FilterBar';
@@ -50,49 +51,52 @@ export default function GuildComparison() {
       Object.entries(dataB.tribBreakdown).filter(([k]) => k.startsWith(t)).reduce((s, [, v]) => s + v, 0)
     );
 
-    return {
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
-        textStyle: { color: '#EDE0C4', fontSize: 10 },
-        formatter: params => {
-          const tier  = activeTiers[params[0].dataIndex];
-          const lines = params.map(p => `<span style="color:${p.color}">${p.seriesName}</span>: <b>${Math.abs(p.value)}</b>`).join('<br/>');
-          return `<b style="color:${tribColor(tier) || '#EDE0C4'}">${tier}</b><br/>${lines}`;
+    return (w) => {
+      const { pick } = bp(w);
+      return {
+        tooltip: {
+          trigger: 'axis',
+          backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
+          textStyle: { color: '#EDE0C4', fontSize: 10 },
+          formatter: params => {
+            const tier  = activeTiers[params[0].dataIndex];
+            const lines = params.map(p => `<span style="color:${p.color}">${p.seriesName}</span>: <b>${Math.abs(p.value)}</b>`).join('<br/>');
+            return `<b style="color:${tribColor(tier) || '#EDE0C4'}">${tier}</b><br/>${lines}`;
+          },
         },
-      },
-      grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
-      xAxis: {
-        type: 'value',
-        axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-        axisLabel: { color: CT, fontSize: 9, formatter: v => Math.abs(v) },
-        splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
-      },
-      yAxis: {
-        type: 'category',
-        data: activeTiers,
-        axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-        axisLabel: {
-          color: (idx) => tribColor(activeTiers[idx]) || '#EDE0C4',
-          fontSize: 9,
+        grid: rGrid(w),
+        xAxis: {
+          type: 'value',
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          axisLabel: { ...rValueLabel(w), formatter: v => Math.abs(v) },
+          splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
         },
-      },
-      series: [
-        {
-          name: dataA.name, type: 'bar',
-          data: countsA.map(v => -v),
-          barWidth: '55%',
-          itemStyle: { color: COLOR_A, borderRadius: [3, 0, 0, 3] },
-          label: { show: true, position: 'insideLeft', color: '#EDE0C4', fontSize: 8, formatter: p => Math.abs(p.value) || '' },
+        yAxis: {
+          type: 'category',
+          data: activeTiers,
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          axisLabel: {
+            color: (idx) => tribColor(activeTiers[idx]) || '#EDE0C4',
+            fontSize: pick(8, 9),
+          },
         },
-        {
-          name: dataB.name, type: 'bar',
-          data: countsB,
-          barWidth: '55%',
-          itemStyle: { color: COLOR_B, borderRadius: [0, 3, 3, 0] },
-          label: { show: true, position: 'insideRight', color: '#EDE0C4', fontSize: 8, formatter: p => p.value || '' },
-        },
-      ],
+        series: [
+          {
+            name: dataA.name, type: 'bar',
+            data: countsA.map(v => -v),
+            barWidth: '55%',
+            itemStyle: { color: COLOR_A, borderRadius: [3, 0, 0, 3] },
+            label: { show: true, position: 'insideLeft', color: '#EDE0C4', fontSize: pick(7, 8), formatter: p => Math.abs(p.value) || '' },
+          },
+          {
+            name: dataB.name, type: 'bar',
+            data: countsB,
+            barWidth: '55%',
+            itemStyle: { color: COLOR_B, borderRadius: [0, 3, 3, 0] },
+            label: { show: true, position: 'insideRight', color: '#EDE0C4', fontSize: pick(7, 8), formatter: p => p.value || '' },
+          },
+        ],
+      };
     };
   }, [dataA, dataB]);
 
@@ -134,7 +138,7 @@ export default function GuildComparison() {
         <div className="flex items-center gap-2 mb-3">
           <Swords size={15} style={{ color: 'var(--gold-bright)' }} />
           <h1 style={{ fontFamily: 'var(--font-title)', fontSize: 14, fontWeight: 700, color: '#EDE0C4', letterSpacing: '0.1em' }}>
-            Guild Comparison — Trial of Two Sects
+            Guild Comparison — Guild Showdown
           </h1>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }} className="md:flex-row md:items-end">
@@ -227,7 +231,7 @@ export default function GuildComparison() {
                 <span style={{ color: COLOR_B }}>{dataB.name} →</span>
               </div>
             </div>
-            <ChartContainer option={pyramidOption} ratio={9 / 16} maxHeight={380} />
+            <ChartContainer option={pyramidOption} ratio={1} maxHeight={380} />
           </GlassCard>
         </>
       )}

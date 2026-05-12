@@ -513,6 +513,27 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   font-size: 10px;
   padding-top: 8px;
   border-top: 1px solid rgba(201,146,11,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.spp-profile-btn {
+  background: none;
+  border: 1px solid rgba(212,168,67,0.3);
+  border-radius: 6px;
+  color: var(--gold-bright);
+  font-size: 10px;
+  font-family: var(--font-title);
+  padding: 3px 10px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.spp-profile-btn:hover {
+  background: rgba(212,168,67,0.1);
+  border-color: rgba(212,168,67,0.6);
 }
 
 /* =============================================
@@ -1138,9 +1159,6 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
     padding-left: 8px !important;
     padding-right: 8px !important;
   }
-
-  /* Responsive chart heights on mobile */
-  .echarts-for-react canvas { max-height: 260px; }
 
   /* Stat grid collapses to 2 columns on mobile */
   .grid-cols-7,

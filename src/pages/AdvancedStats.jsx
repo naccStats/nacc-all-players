@@ -2,10 +2,11 @@ import { useContext, useMemo, useState } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
 import { tribRank, tribColor } from '../utils/tribulationSystem';
+import { bp, rGrid, rLabel, rValueLabel, rNameText } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
-import { motion } from 'framer-motion';
-import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers, Calculator, Thermometer, ZoomIn, ZoomOut } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers, Calculator, Thermometer, ZoomIn, ZoomOut, Search } from 'lucide-react';
 import 'echarts-gl';
 
 const T = { color: '#7D7263' };
@@ -16,6 +17,8 @@ export default function AdvancedStatistics() {
   const rawPlayers = useContext(PlayerContext);
   const [calcCP, setCalcCP] = useState('');
   const [zoom3DScatter, setZoom3DScatter] = useState(() => window.innerWidth < 640 ? 59 : 75);
+  const [scatter3DSearch, setScatter3DSearch] = useState('');
+  const [scatter3DDropdownOpen, setScatter3DDropdownOpen] = useState(false);
 
   const stats = useMemo(() => {
     const players = rawPlayers || [];
@@ -28,7 +31,7 @@ export default function AdvancedStatistics() {
 
     const scatterData = players
       .filter(p => p.totalFinals > 0 && p.cp > 0)
-      .map(p => ({ value: [p.totalFinals, p.cp, p.fdu || 0, p.player], trib: p.tribulation }));
+      .map(p => ({ value: [p.totalFinals, p.cp, p.fdu || 0, p.player], trib: p.tribulation, uid: p.uid }));
 
     // Build tribulation avg CP sorted by correct rank order (DG strongest → BI weakest)
     const tribCP = {};
@@ -91,6 +94,55 @@ export default function AdvancedStatistics() {
     return { median, q1, q3, mean, scatterData, tribAvg, chaosAvg, noChaosAvg, chaosCount: chaosCPs.length, noChaosCount: noChaosCPs.length, fduFdd, scored, cps, boxData, heatData };
   }, [rawPlayers]);
 
+  /* ── 3D scatter highlight ────────────────────────────────────────────────
+   * UID is always unique — exact match wins.
+   * Name search is case-insensitive contains; multiple matches are all
+   * highlighted so the ambiguity is visible rather than silent.
+   */
+  const scatter3DHighlights = useMemo(() => {
+    const q = scatter3DSearch.trim().toLowerCase();
+    if (!q) return new Set();
+    const players = rawPlayers || [];
+    const uidExact = players.find(p => String(p.uid).toLowerCase() === q);
+    if (uidExact) return new Set([uidExact.uid]);
+    return new Set(players.filter(p => p.player?.toLowerCase().includes(q)).map(p => p.uid));
+  }, [scatter3DSearch, rawPlayers]);
+
+  const scatter3DMatchInfo = useMemo(() => {
+    if (!scatter3DSearch.trim()) return null;
+    const count = scatter3DHighlights.size;
+    if (count === 0) return { status: 'none' };
+
+    const players = rawPlayers || [];
+    const matched = [...scatter3DHighlights]
+      .map(uid => players.find(p => p.uid === uid))
+      .filter(Boolean)
+      .sort((a, b) => (b.cp || 0) - (a.cp || 0));
+
+    // Compute each matched player's CP rank across all players.
+    const allCPs = [...players.map(p => p.cp || 0)].sort((a, b) => b - a);
+    const withRank = matched.map(p => ({
+      ...p,
+      cpRank: allCPs.findIndex(c => c <= (p.cp || 0)) + 1,
+    }));
+
+    return { status: count === 1 ? 'single' : 'multi', players: withRank };
+  }, [scatter3DSearch, scatter3DHighlights, rawPlayers]);
+
+  /* Autocomplete suggestions — shown while typing, before a selection is made */
+  const scatter3DSuggestions = useMemo(() => {
+    const q = scatter3DSearch.trim().toLowerCase();
+    if (!q) return [];
+    const players = rawPlayers || [];
+    // If it's already a UID exact match there's nothing more to suggest
+    const uidExact = players.find(p => String(p.uid).toLowerCase() === q);
+    if (uidExact) return [];
+    return players
+      .filter(p => p.player?.toLowerCase().includes(q))
+      .sort((a, b) => (b.cp || 0) - (a.cp || 0))
+      .slice(0, 8);
+  }, [scatter3DSearch, rawPlayers]);
+
   /* ── Percentile calculator ────────────────────────────────────────────── */
   const calcResult = useMemo(() => {
     const v = parseFloat(calcCP);
@@ -131,7 +183,7 @@ export default function AdvancedStatistics() {
             <h2 className="text-sm font-display font-bold gradient-text">Finals · CP · FDU — 3D Scatter</h2>
           </div>
           <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 6 }}>Drag to rotate · Scroll/pinch to zoom · Color = Tribulation tier</div>
-          <ChartContainer option={scatter3DChart(stats.scatterData, Math.round(400 - zoom3DScatter * 3.2))} ratio={3/4} maxHeight={430} />
+          <ChartContainer option={scatter3DChart(stats.scatterData, Math.round(400 - zoom3DScatter * 3.2), scatter3DHighlights)} type="3d" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(46,155,229,0.08)' }}>
             <ZoomOut size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
             <input
@@ -141,6 +193,133 @@ export default function AdvancedStatistics() {
             />
             <ZoomIn size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
           </div>
+          {/* Player highlight search */}
+          <div style={{ position: 'relative', marginTop: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+              <Search size={11} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+              <input
+                type="text"
+                value={scatter3DSearch}
+                onChange={e => { setScatter3DSearch(e.target.value); setScatter3DDropdownOpen(true); }}
+                onFocus={() => setScatter3DDropdownOpen(true)}
+                onBlur={() => setTimeout(() => setScatter3DDropdownOpen(false), 150)}
+                placeholder="Highlight by UID or player name…"
+                style={{
+                  flex: 1, padding: '5px 10px', borderRadius: 7,
+                  background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(46,155,229,0.2)',
+                  color: '#EDE0C4', fontSize: 11, fontFamily: 'monospace', outline: 'none',
+                  minWidth: 0,
+                }}
+              />
+              {scatter3DSearch && (
+                <button
+                  onClick={() => { setScatter3DSearch(''); setScatter3DDropdownOpen(false); }}
+                  style={{ background: 'none', border: 'none', color: 'var(--muted)', cursor: 'pointer', fontSize: 13, padding: '0 2px', lineHeight: 1, flexShrink: 0 }}
+                  aria-label="Clear search"
+                >✕</button>
+              )}
+            </div>
+            {/* Autocomplete dropdown */}
+            {scatter3DDropdownOpen && scatter3DSuggestions.length > 0 && (
+              <div style={{
+                position: 'absolute', top: '100%', left: 18, right: 0, zIndex: 50,
+                marginTop: 4, borderRadius: 8, overflow: 'hidden',
+                background: 'rgba(10,5,20,0.96)', border: '1px solid rgba(46,155,229,0.25)',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+              }}>
+                {scatter3DSuggestions.map((p, idx) => (
+                  <button
+                    key={p.uid}
+                    onMouseDown={e => {
+                      e.preventDefault();
+                      setScatter3DSearch(String(p.uid));
+                      setScatter3DDropdownOpen(false);
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                      padding: '7px 10px', background: 'none', border: 'none',
+                      borderBottom: idx < scatter3DSuggestions.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                      color: '#EDE0C4', cursor: 'pointer', textAlign: 'left',
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(46,155,229,0.10)'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                      background: tribColor(p.tribulation) || 'var(--azure-bright)' }} />
+                    <span style={{ fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{p.player}</span>
+                    <span style={{ fontSize: 9, color: 'var(--muted)', flexShrink: 0, marginLeft: 4 }}>{p.tribulation || '—'}</span>
+                    <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'var(--azure-bright)', flexShrink: 0, marginLeft: 6 }}>{formatCP(p.cp)}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Match info panel */}
+          <AnimatePresence>
+            {scatter3DMatchInfo?.status === 'none' && (
+              <motion.div key="none" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                style={{ fontSize: 9, color: 'var(--cinnabar-bright)', marginTop: 6, paddingLeft: 18 }}>
+                No player found
+              </motion.div>
+            )}
+            {scatter3DMatchInfo?.status === 'multi' && (
+              <motion.div key="multi" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                style={{ marginTop: 8, padding: '8px 10px', borderRadius: 8, background: 'rgba(0,0,0,0.28)', border: '1px solid rgba(46,155,229,0.15)' }}>
+                <div style={{ fontSize: 9, color: 'var(--azure-bright)', marginBottom: 6, fontFamily: 'var(--font-title)', letterSpacing: '0.06em' }}>
+                  {scatter3DMatchInfo.players.length} PLAYERS MATCHED
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 180, overflowY: 'auto' }}>
+                  {scatter3DMatchInfo.players.map(p => (
+                    <div key={p.uid} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 6px', borderRadius: 5, background: 'rgba(255,255,255,0.03)' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', flexShrink: 0, background: 'var(--azure-bright)' }} />
+                      <span style={{ fontSize: 10, color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{p.player}</span>
+                      <span style={{ fontSize: 9, color: 'var(--muted)', flexShrink: 0 }}>{p.tribulation || '—'}</span>
+                      <span style={{ fontSize: 9, fontFamily: 'monospace', color: 'var(--azure-bright)', flexShrink: 0 }}>{formatCP(p.cp)}</span>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            {scatter3DMatchInfo?.status === 'single' && (() => {
+              const p = scatter3DMatchInfo.players[0];
+              if (!p) return null;
+              return (
+                <motion.div key={p.uid} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ marginTop: 8, padding: '10px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(212,168,67,0.2)' }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12, fontFamily: 'var(--font-title)', fontWeight: 700, color: '#FFD700' }}>{p.player}</span>
+                    {p.guild && <span style={{ fontSize: 9, color: 'var(--muted)' }}>{p.guild}</span>}
+                    {p.tribulation && (
+                      <span style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700, color: 'var(--imperial-bright)',
+                        padding: '1px 6px', borderRadius: 4, background: 'rgba(201,67,169,0.12)', border: '1px solid rgba(201,67,169,0.25)' }}>
+                        {p.tribulation}
+                      </span>
+                    )}
+                  </div>
+                  {/* Stat grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {[
+                      { label: 'CP',        val: formatCP(p.cp),                         color: 'var(--azure-bright)' },
+                      { label: 'CP Rank',   val: `#${p.cpRank}`,                         color: 'var(--gold-bright)' },
+                      { label: 'Finals',    val: p.totalFinals ?? '—',                   color: 'var(--imperial-bright)' },
+                      { label: 'FDU',       val: p.fdu != null ? p.fdu : '—',            color: 'var(--jade-bright)' },
+                      { label: 'FDD',       val: p.fdd != null ? p.fdd : '—',            color: 'var(--jade-bright)' },
+                      { label: 'Chaos',     val: p.hasChaos ? 'Yes' : 'No',              color: p.hasChaos ? 'var(--cinnabar-bright)' : 'var(--muted)' },
+                    ].map(({ label, val, color }) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 8, color: 'var(--muted)', marginBottom: 1, letterSpacing: '0.06em' }}>{label}</div>
+                        <div style={{ fontSize: 12, fontFamily: 'monospace', fontWeight: 700, color }}>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              );
+            })()}
+          </AnimatePresence>
         </GlassCard>
 
         <GlassCard variant="purple">
@@ -148,7 +327,7 @@ export default function AdvancedStatistics() {
             <BarChart3 size={15} style={{ color: 'var(--imperial-bright)' }}/>
             <h2 className="text-sm font-display font-bold gradient-text">Avg CP by Tribulation Stage</h2>
           </div>
-          <ChartContainer option={tribAvgChart(stats.tribAvg)} ratio={9/16} maxHeight={340} />
+          <ChartContainer option={(w) => tribAvgChart(stats.tribAvg, w)} type="bar" />
         </GlassCard>
       </div>
 
@@ -158,7 +337,7 @@ export default function AdvancedStatistics() {
             <ScatterChart size={15} style={{ color: 'var(--cinnabar-bright)' }}/>
             <h2 className="text-sm font-display font-bold gradient-text">FDU vs FDD Correlation</h2>
           </div>
-          <ChartContainer option={fduFddChart(stats.fduFdd)} ratio={9/16} maxHeight={320} />
+          <ChartContainer option={(w) => fduFddChart(stats.fduFdd, w)} type="bar" maxHeight={320} />
         </GlassCard>
 
         <GlassCard variant="gold">
@@ -206,7 +385,7 @@ export default function AdvancedStatistics() {
             <BarChart3 size={14} style={{ color: 'var(--imperial-bright)' }} />
             <h2 className="text-sm font-display font-bold gradient-text">CP Spread by Tribulation Tier</h2>
           </div>
-          <ChartContainer option={boxPlotChart(stats.boxData)} ratio={9 / 16} maxHeight={360} />
+          <ChartContainer option={(w) => boxPlotChart(stats.boxData, w)} type="box" />
         </GlassCard>
 
         <GlassCard variant="red">
@@ -214,7 +393,7 @@ export default function AdvancedStatistics() {
             <Thermometer size={14} style={{ color: 'var(--cinnabar-bright)' }} />
             <h2 className="text-sm font-display font-bold gradient-text">FDU vs FDD Density Heatmap</h2>
           </div>
-          <ChartContainer option={heatmapChart(stats.heatData)} ratio={9 / 16} maxHeight={360} />
+          <ChartContainer option={(w) => heatmapChart(stats.heatData, w)} type="heatmap" />
         </GlassCard>
       </div>
 
@@ -266,12 +445,14 @@ export default function AdvancedStatistics() {
   );
 }
 
-function scatter3DChart(data, distance = 160) {
+function scatter3DChart(data, distance = 160, highlights = new Set()) {
   if (!data.length) return { series: [] };
   const isMobile = window.innerWidth < 640;
+  const hasHighlight = highlights.size > 0;
   return {
     tooltip: {
-      trigger: 'item', backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
+      trigger: 'item', triggerOn: 'mousemove|click',
+      backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => {
         const [finals, cp, fdu, player] = p.value;
@@ -303,19 +484,40 @@ function scatter3DChart(data, distance = 160) {
     },
     series: [{
       type: 'scatter3D',
-      data: data.map(d => ({
-        value: d.value,
-        name: d.value[3],
-        itemStyle: { color: tribColor(d.trib) || '#4B5563', opacity: 0.82 },
-      })),
+      data: data.map(d => {
+        const isHit = hasHighlight && highlights.has(d.uid);
+        const isDimmed = hasHighlight && !isHit;
+        return {
+          value: d.value,
+          name: d.value[3],
+          itemStyle: {
+            color: isHit ? '#FFD700' : (tribColor(d.trib) || '#4B5563'),
+            opacity: isDimmed ? 0.15 : (isHit ? 1 : 0.82),
+          },
+        };
+      }),
       symbolSize: isMobile ? 4 : 5,
       emphasis: { itemStyle: { opacity: 1, shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.38)' } },
-    }],
+    },
+    // Highlighted points rendered as a second series on top so they're always
+    // visible and get a larger symbol size without affecting the base series.
+    ...(hasHighlight ? [{
+      type: 'scatter3D',
+      data: data.filter(d => highlights.has(d.uid)).map(d => ({
+        value: d.value,
+        name: d.value[3],
+        itemStyle: { color: '#FFD700', opacity: 1 },
+      })),
+      symbolSize: isMobile ? 10 : 12,
+      emphasis: { itemStyle: { opacity: 1, shadowBlur: 20, shadowColor: 'rgba(255,215,0,0.6)' } },
+    }] : []),
+    ],
   };
 }
 
-function tribAvgChart(tribAvg) {
+function tribAvgChart(tribAvg, w = 400) {
   if (!tribAvg.length) return { series: [] };
+  const { pick } = bp(w);
   return {
     tooltip: {
       trigger: 'axis', backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
@@ -325,16 +527,16 @@ function tribAvgChart(tribAvg) {
         return `<b style="color:${tribColor(t.trib)}">${t.trib}</b><br/>Avg CP: ${formatCP(t.avgCP)}<br/>Cultivators: ${t.count}`;
       },
     },
-    grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
+    grid: rGrid(w, { top: 16 }),
     xAxis: {
       type: 'category', data: tribAvg.map(t => t.trib),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, rotate: 30 },
+      axisLabel: { color: '#EDE0C4', ...rLabel(w, { rotate: pick(40, 30) }) },
     },
     yAxis: {
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { ...T, fontSize: 9, formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), formatter: v => formatCP(v) },
       splitLine: { lineStyle: SL },
     },
     series: [{
@@ -348,24 +550,24 @@ function tribAvgChart(tribAvg) {
   };
 }
 
-function fduFddChart(data) {
+function fduFddChart(data, w = 400) {
   return {
     tooltip: {
       trigger: 'item', backgroundColor: TB.bg, borderColor: 'rgba(201,34,24,0.35)', borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => `<b>${p.data[2]}</b><br/>FDU: ${p.data[0]}<br/>FDD: ${p.data[1]}`,
     },
-    grid: { left: 8, right: 8, top: 16, bottom: 8, containLabel: true },
+    grid: rGrid(w, { top: 16 }),
     xAxis: {
-      name: 'FDU', nameTextStyle: { ...T, fontSize: 9 }, type: 'value',
+      name: 'FDU', nameTextStyle: rNameText(w), type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { ...T, fontSize: 9 },
+      axisLabel: rValueLabel(w),
       splitLine: { lineStyle: SL },
     },
     yAxis: {
-      name: 'FDD', nameTextStyle: { ...T, fontSize: 9 }, type: 'value',
+      name: 'FDD', nameTextStyle: rNameText(w), type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { ...T, fontSize: 9 },
+      axisLabel: rValueLabel(w),
       splitLine: { lineStyle: SL },
     },
     series: [{
@@ -376,8 +578,9 @@ function fduFddChart(data) {
   };
 }
 
-function boxPlotChart(boxData) {
+function boxPlotChart(boxData, w = 400) {
   if (!boxData || !boxData.length) return { series: [] };
+  const { pick } = bp(w);
   return {
     tooltip: {
       trigger: 'axis',
@@ -387,7 +590,6 @@ function boxPlotChart(boxData) {
         const p = params[0];
         const entry = boxData[p.dataIndex];
         const tier = entry?.tier || '';
-        // ECharts boxplot with trigger:'axis' prepends the category index: [catIdx, min, Q1, median, Q3, max]
         const [, min, q1, med, q3, max] = p.value;
         const color = tribColor(tier) || '#EDE0C4';
         if (entry?.single) {
@@ -397,17 +599,17 @@ function boxPlotChart(boxData) {
           Max: ${formatCP(max)}<br/>Q3: ${formatCP(q3)}<br/>Median: ${formatCP(med)}<br/>Q1: ${formatCP(q1)}<br/>Min: ${formatCP(min)}`;
       },
     },
-    grid: { left: 8, right: 8, top: 12, bottom: 8, containLabel: true },
+    grid: rGrid(w),
     xAxis: {
       type: 'category',
       data: boxData.map(b => b.tier),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#EDE0C4', fontSize: 9, rotate: 30 },
+      axisLabel: { color: '#EDE0C4', ...rLabel(w, { rotate: pick(40, 30) }) },
     },
     yAxis: {
       type: 'log',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 9, formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), formatter: v => formatCP(v) },
       splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
     },
     series: [{
@@ -423,8 +625,9 @@ function boxPlotChart(boxData) {
   };
 }
 
-function heatmapChart(heatData) {
+function heatmapChart(heatData, w = 400) {
   if (!heatData || !heatData.length) return { series: [] };
+  const { pick } = bp(w);
   const BINS = 10;
   const minFDU = heatData._minFDU || 0;
   const minFDD = heatData._minFDD || 0;
@@ -446,22 +649,23 @@ function heatmapChart(heatData) {
       calculable: true,
       orient: 'horizontal', bottom: 0, left: 'center',
       inRange: { color: ['rgba(155,89,182,0.15)', '#9B59B6', '#D4A843'] },
-      textStyle: { color: '#8B7E6A', fontSize: 9 },
+      textStyle: rNameText(w),
+      itemWidth: pick(10, 15), itemHeight: pick(80, 120),
     },
-    grid: { left: 8, right: 8, top: 12, bottom: 40, containLabel: true },
+    grid: rGrid(w, { bottom: pick(64, 52) }),
     xAxis: {
       type: 'category',
       data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDU + i * step)}`),
-      name: 'FDU', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      name: 'FDU', nameTextStyle: rNameText(w),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 8, rotate: 30 },
+      axisLabel: { ...rLabel(w, { rotate: pick(40, 30) }), fontSize: pick(7, 8) },
     },
     yAxis: {
       type: 'category',
       data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDD + i * step)}`),
-      name: 'FDD', nameTextStyle: { color: '#8B7E6A', fontSize: 9 },
+      name: 'FDD', nameTextStyle: rNameText(w),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#8B7E6A', fontSize: 8 },
+      axisLabel: rLabel(w, { fontSize: pick(7, 8) }),
     },
     series: [{
       type: 'heatmap',
