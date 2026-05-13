@@ -162,7 +162,7 @@ export default function GuildComparison() {
 
       {(!dataA || !dataB) && (
         <GlassCard style={{ textAlign: 'center', padding: '40px 20px' }}>
-          <div style={{ fontSize: 28, color: 'var(--gold-bright)', fontFamily: 'var(--font-deco)', marginBottom: 8 }}>公会</div>
+          <div style={{ fontSize: 28, color: 'var(--gold-bright)', fontFamily: 'var(--font-deco)', marginBottom: 8 }}>会</div>
           <p style={{ fontSize: 11, color: 'var(--muted)' }}>Select two guilds above to begin the trial.</p>
         </GlassCard>
       )}
