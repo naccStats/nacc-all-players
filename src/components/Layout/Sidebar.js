@@ -15,7 +15,7 @@ import {
 const navItems = [
   { path: '/',          label: 'Dashboard',  icon: LayoutDashboard, deco: '界' },
   { path: '/rankings',  label: 'Rankings',   icon: Trophy,          deco: '榜' },
-  { path: '/guilds',    label: 'Guilds',     icon: Shield,          deco: '宗' },
+  { path: '/guilds',    label: 'Guilds',     icon: Shield,          deco: '公会' },
   { path: '/advanced',  label: 'Advanced',   icon: BarChart3,       deco: '道' },
   { path: '/insights',  label: 'Insights',   icon: Eye,             deco: '悟' },
   { path: '/bestiary',  label: 'Chaotic Beasts', icon: PawPrint,     deco: '兽' },
