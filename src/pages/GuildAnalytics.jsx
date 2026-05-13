@@ -1,9 +1,9 @@
 import { useContext, useState, useMemo } from 'react';
 import { PlayerContext } from '../App';
-import { formatCP } from '../utils/formatters';
-import { tribColor, tribRank } from '../utils/tribulationSystem';
+import { formatCP, formatCPShort } from '../utils/formatters';
+import { tribColor, tribRank, TRIB_PREFIXES } from '../utils/tribulationSystem';
 import { computeGuildStats } from '../utils/statsEngine';
-import { bp, rGrid, rLabel, rValueLabel, rNameText } from '../utils/chartResponsive';
+import { bp, rGrid, rLabel, rValueLabel, rNameText, CHART_BREAKPOINTS } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { FilterSelect } from '../components/FilterBar';
@@ -17,8 +17,22 @@ const CHART_TEXT = '#7D7263';
 const CHART_GRID_LINE = 'rgba(212,168,67,0.08)';
 
 const PALETTE = [
-  '#D4A843','#CB4335','#9B59B6','#2E9BE5','#1EBD82',
+  '#D4A843', '#CB4335', '#9B59B6', '#2E9BE5', '#1EBD82',
+  '#D4813A', '#5D7FC2', '#B03A8E', '#17A272', '#E8C46A',
+  '#6B7FBD', '#8A4FA8', '#3AAD7A', '#C07030', '#9B7FD4',
 ];
+
+/* Named slice limits — change one constant here to resize everywhere */
+const PIE_TOP_N       = 9;
+const BAR_GUILD_LIMIT = 12;
+const BUBBLE_LIMIT    = 15;
+const TREEMAP_LIMIT   = 20;
+const GUILD_3D_LIMIT  = 8;
+const GUILD_LABEL_MAX = 7;
+
+/* 3D camera constants */
+const GUILD3D_BASE_DIST  = 400;
+const GUILD3D_ZOOM_SCALE = 3.2;
 
 function guildBarChart(guilds, w = 400, hlGuild = '') {
   if (!guilds?.length) return { series: [] };
@@ -41,8 +55,9 @@ function guildBarChart(guilds, w = 400, hlGuild = '') {
     grid: rGrid(w, { top: 10 }),
     xAxis: {
       type: 'value',
+      splitNumber: bp(w).sm ? 3 : 5,
       axisLine: { lineStyle: { color: CHART_GRID_LINE } },
-      axisLabel: { ...rValueLabel(w), color: CHART_TEXT, formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), color: CHART_TEXT, formatter: v => formatCPShort(v), hideOverlap: true },
       splitLine: { lineStyle: { color: CHART_GRID_LINE, type: 'dashed' } },
     },
     yAxis: {
@@ -53,7 +68,8 @@ function guildBarChart(guilds, w = 400, hlGuild = '') {
       axisLabel: { color: '#EDE0C4', ...rLabel(w, { width: pick(70, 100) }) },
     },
     series: [{
-      type: 'bar', data: guilds.map(g => g.totalCP), barWidth: 11,
+      type: 'bar', data: guilds.map(g => g.totalCP),
+      barWidth: Math.max(4, Math.min(16, Math.round(120 / guilds.length))),
       itemStyle: {
         borderRadius: [0, 5, 5, 0],
         color: p => {
@@ -73,8 +89,8 @@ function guildBarChart(guilds, w = 400, hlGuild = '') {
 function guildPieChart(guilds, hlGuild = '') {
   if (!guilds?.length) return { series: [] };
   const hasHl = !!hlGuild;
-  const top = guilds.slice(0, 9);
-  const rest = guilds.slice(9);
+  const top = guilds.slice(0, PIE_TOP_N);
+  const rest = guilds.slice(PIE_TOP_N);
   const otherCP = rest.reduce((s, g) => s + g.totalCP, 0);
   const pieData = [
     ...top.map((g, i) => ({
@@ -121,7 +137,7 @@ export default function GuildAnalytics() {
   const [search, setSearch] = useState('');
   const [selectedGuild, setSelectedGuild] = useState(null);
   const [hoveredGuild, setHoveredGuild] = useState(null);
-  const [zoom3D, setZoom3D] = useState(() => window.innerWidth < 640 ? 53 : 69);
+  const [zoom3D, setZoom3D] = useState(() => window.innerWidth < CHART_BREAKPOINTS.sm ? 53 : 69);
   const [hl3DGuild, setHl3DGuild] = useState('');   // highlighted guild name, '' = all
   const [hl3DTrib, setHl3DTrib]   = useState('');   // highlighted trib tier, '' = all
 
@@ -135,9 +151,9 @@ export default function GuildAnalytics() {
   const totalCP = guildStats.reduce((s, g) => s + g.totalCP, 0);
 
   // The top-8 guilds and active tiers shown in the 3D chart — used for dropdowns.
-  const top8 = filtered.slice(0, 8);
+  const top8 = filtered.slice(0, GUILD_3D_LIMIT);
   const activeTiers3D = useMemo(() => {
-    return TRIB_TIERS_3D.filter(tier =>
+    return TRIB_PREFIXES.filter(tier =>
       top8.some(g => Object.entries(g.tribBreakdown).some(([k]) => k.startsWith(tier)))
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -209,7 +225,7 @@ export default function GuildAnalytics() {
             <Shield size={15} style={{ color: 'var(--azure-bright)' }}/>
             <h2 className="text-sm font-display font-bold gradient-text">Guild Power Rankings</h2>
           </div>
-          <ChartContainer option={(w) => guildBarChart(guildStats.slice(0, 12), w, search)} type="bar" maxHeight={350} />
+          <ChartContainer option={(w) => guildBarChart(guildStats.slice(0, BAR_GUILD_LIMIT), w, search)} type="bar" maxHeight={350} />
         </GlassCard>
 
         <GlassCard variant="gold">
@@ -420,7 +436,7 @@ export default function GuildAnalytics() {
             )}
           </div>
 
-          <ChartContainer option={guild3DBarChart(guildStats, Math.round(400 - zoom3D * 3.2), hl3DGuild || search, hl3DTrib)} type="3d" />
+          <ChartContainer option={guild3DBarChart(guildStats, Math.round(GUILD3D_BASE_DIST - zoom3D * GUILD3D_ZOOM_SCALE), hl3DGuild || search, hl3DTrib)} type="3d" />
 
           {/* ── Info panel ── */}
           <AnimatePresence>
@@ -549,7 +565,7 @@ export default function GuildAnalytics() {
               color: '#EDE0C4', letterSpacing: '0.05em',
             }}>Guilds</div>
             <div style={{ overflowY: 'auto', maxHeight: 320, padding: '2px 0' }}>
-              {guildStats.slice(0, 15).map((g, i) => {
+              {guildStats.slice(0, BUBBLE_LIMIT).map((g, i) => {
                 const isHovered = hoveredGuild === i;
                 return (
                   <div
@@ -619,7 +635,7 @@ function guildTreemapChart(guilds, hlGuild = '') {
     },
     series: [{
       type: 'treemap',
-      data: guilds.slice(0, 20).map(g => ({
+      data: guilds.slice(0, TREEMAP_LIMIT).map(g => ({
         name: g.name,
         value: g.memberCount,
         avgCP: g.avgCP,
@@ -641,7 +657,6 @@ function guildTreemapChart(guilds, hlGuild = '') {
 }
 
 /* ─── 3D bar — guild territory map ─────────────────────────────────────── */
-const TRIB_TIERS_3D = ['BI','TI','GA','CI','SI','GI','DL','CK','CE','SM','DG'];
 
 /** Scale RGB channels up by `factor` (clamped to 255) to boost brightness without washing out hue. */
 function boostColor(hex, factor = 1.55) {
@@ -655,10 +670,10 @@ function boostColor(hex, factor = 1.55) {
 
 function guild3DBarChart(guilds, distance = 180, hlGuild = '', hlTrib = '') {
   if (!guilds.length) return { series: [] };
-  const isMobile = window.innerWidth < 640;
-  const top8 = guilds.slice(0, 8);
-  const truncate = name => isMobile && name.length > 7 ? name.slice(0, 7) + '\u2026' : name;
-  const activeTiers = TRIB_TIERS_3D.filter(tier =>
+  const isMobile = window.innerWidth < CHART_BREAKPOINTS.sm;
+  const top8 = guilds.slice(0, GUILD_3D_LIMIT);
+  const truncate = name => isMobile && name.length > GUILD_LABEL_MAX ? name.slice(0, GUILD_LABEL_MAX) + '\u2026' : name;
+  const activeTiers = TRIB_PREFIXES.filter(tier =>
     top8.some(g => Object.entries(g.tribBreakdown).some(([k]) => k.startsWith(tier)))
   );
   const hasHighlight = hlGuild || hlTrib;
@@ -741,7 +756,7 @@ function guild3DBarChart(guilds, distance = 180, hlGuild = '', hlTrib = '') {
 function guildBubbleChart(guilds, hoveredIndex = null, hlIndex = null, w = 400) {
   if (!guilds.length) return { series: [] };
   const { pick } = bp(w);
-  const sliced = guilds.slice(0, 15);
+  const sliced = guilds.slice(0, BUBBLE_LIMIT);
   // hlIndex (from search dropdown) takes priority over hoveredIndex
   const activeIndex = hlIndex !== null ? hlIndex : hoveredIndex;
   const hasHl = activeIndex !== null;

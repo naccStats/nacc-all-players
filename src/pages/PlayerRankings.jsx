@@ -258,7 +258,9 @@ export default function PlayerRankings() {
                     fontSize: 10, fontWeight: 700, fontFamily: 'var(--font-title)',
                     background: rankBg, color: rankColor,
                     border: `1px solid ${rankColor}40`,
-                  }}>{rank}</div>
+                  }}
+                    className={rank === 1 ? 'rank-badge--gold' : rank === 2 ? 'rank-badge--silver' : rank === 3 ? 'rank-badge--bronze' : ''}
+                  >{rank}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                       <span style={{ fontWeight: 600, color: '#EDE0C4', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player}</span>
@@ -385,7 +387,9 @@ export default function PlayerRankings() {
                             : rank === 3 ? '#A07830'
                             : 'var(--muted)',
                           border: rank <= 3 ? '1px solid rgba(201,146,11,0.3)' : '1px solid rgba(255,255,255,0.05)',
-                        }}>{rank}</div>
+                        }}
+                          className={rank === 1 ? 'rank-badge--gold' : rank === 2 ? 'rank-badge--silver' : rank === 3 ? 'rank-badge--bronze' : ''}
+                        >{rank}</div>
                       </td>
                       <td style={{ padding: '10px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>

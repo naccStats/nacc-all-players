@@ -11,7 +11,7 @@ const accentMap = {
   default:'var(--text)',
 };
 
-const StatCard = ({ label, value, icon, color = 'cyan', sub, delay = 0 }) => {
+const StatCard = ({ label, value, icon, color = 'cyan', sub, delay = 0, gradient = false }) => {
   const accent = accentMap[color] || accentMap.default;
 
   return (
@@ -21,8 +21,8 @@ const StatCard = ({ label, value, icon, color = 'cyan', sub, delay = 0 }) => {
         <span className="stat-label">{label}</span>
       </div>
       <motion.div
-        className="stat-value"
-        style={{ color: accent, textShadow: `0 0 18px ${accent}55` }}
+        className={`stat-value${gradient ? ' gradient-text-gold' : ''}`}
+        style={gradient ? {} : { color: accent, textShadow: `0 0 18px ${accent}55` }}
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: delay + 0.1, ease: 'backOut' }}
@@ -33,5 +33,17 @@ const StatCard = ({ label, value, icon, color = 'cyan', sub, delay = 0 }) => {
     </GlassCard>
   );
 };
+
+/* Reusable scroll-style section heading */
+export const SectionHeader = ({ icon, label }) => (
+  <div className="section-header">
+    <div className="section-header-line" />
+    <div className="section-header-label">
+      {icon}
+      {label}
+    </div>
+    <div className="section-header-line" />
+  </div>
+);
 
 export default StatCard;

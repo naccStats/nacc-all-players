@@ -12,7 +12,7 @@
  * Index 0  = DG (strongest) → base rank = 15
  * Index 14 = QR (weakest)   → base rank = 1
  */
-const TRIB_PREFIXES = [
+export const TRIB_PREFIXES = [
   'DG',  // 15 — Demigod
   'SM',  // 14 — Supreme Master
   'CE',  // 13 — Celestial Emperor

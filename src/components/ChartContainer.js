@@ -21,6 +21,8 @@ import ReactECharts from 'echarts-for-react';
  *
  * If you add a type here, mirror it in the CHART_TYPES block in chartResponsive.js.
  */
+const MIN_CHART_HEIGHT = 180;
+
 const CHART_DEFAULTS = {
   pie:     { ratio: 1,      maxHeight: 300, square: true,  gl: false },
   scatter: { ratio: 1,      maxHeight: 320, square: true,  gl: false },
@@ -60,7 +62,8 @@ export default function ChartContainer({ option, type, ratio, maxHeight, opts = 
 
   const compute = useCallback((width) => {
     if (!width) return undefined;
-    return Math.max(Math.min(Math.round(width * _ratio), _maxHeight), 180);
+    const viewportCap = Math.floor(window.innerHeight * 0.65);
+    return Math.max(Math.min(Math.round(width * _ratio), _maxHeight, viewportCap), MIN_CHART_HEIGHT);
   }, [_ratio, _maxHeight]);
 
   useEffect(() => {

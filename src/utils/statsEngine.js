@@ -1,3 +1,6 @@
+export const TOP_GUILDS_LIMIT  = 20;
+export const TOP_PLAYERS_LIMIT = 20;
+
 export const computeGlobalStats = (players) => {
   if (!players.length) {
     return {
@@ -41,11 +44,11 @@ export const computeGlobalStats = (players) => {
 
   const topGuilds = Object.values(guildMap)
     .sort((a, b) => b.totalCP - a.totalCP)
-    .slice(0, 20);
+    .slice(0, TOP_GUILDS_LIMIT);
 
   const topPlayers = [...players]
     .sort((a, b) => (b.cp || 0) - (a.cp || 0))
-    .slice(0, 20);
+    .slice(0, TOP_PLAYERS_LIMIT);
 
   const guildCount = Object.keys(guildMap).length;
 

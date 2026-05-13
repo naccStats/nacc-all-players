@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDataContext } from '../../context/DataContext';
+import { formatTime } from '../../utils/formatters';
 import {
   LayoutDashboard,
   Trophy,
@@ -24,6 +26,7 @@ const navItems = [
 
 const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
   const location = useLocation();
+  const { lastUpdated } = useDataContext();
 
   return (
     <aside
@@ -114,6 +117,15 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
           )}
         </AnimatePresence>
       </button>
+
+      {/* Freshness indicator */}
+      <div className="sidebar-freshness">
+        <span className="sidebar-freshness-dot" />
+        <span className="sidebar-freshness-text">Synced</span>
+        <span className="sidebar-freshness-time">
+          {lastUpdated ? formatTime(lastUpdated) : '—'}
+        </span>
+      </div>
 
       {/* Footer */}
       <div className="sidebar-footer">

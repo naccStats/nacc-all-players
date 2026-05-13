@@ -48,6 +48,9 @@ export const CHART_BREAKPOINTS = {
   md: 720,  // "medium" — phones landscape / small tablets
 };
 
+/** Single source for muted axis label / name text color. */
+export const AXIS_LABEL_COLOR = '#8B7E6A';
+
 /**
  * bp(w) — returns a breakpoint context for the given canvas width.
  *
@@ -81,9 +84,10 @@ export function bp(w) {
  * @param {object} [overrides] - any grid keys to override after bp logic is applied
  */
 export function rGrid(w, overrides = {}) {
+  const { sm } = bp(w);
   return {
     left: 8,
-    right: 8,
+    right: sm ? 20 : 8,
     top: 12,
     bottom: 8,
     containLabel: true,
@@ -103,7 +107,7 @@ export function rGrid(w, overrides = {}) {
 export function rLabel(w, overrides = {}) {
   const { sm } = bp(w);
   return {
-    color: '#8B7E6A',
+    color: AXIS_LABEL_COLOR,
     fontSize: sm ? 8 : 9,
     overflow: 'truncate',
     ...overrides,
@@ -117,7 +121,7 @@ export function rLabel(w, overrides = {}) {
 export function rValueLabel(w, overrides = {}) {
   const { sm } = bp(w);
   return {
-    color: '#8B7E6A',
+    color: AXIS_LABEL_COLOR,
     fontSize: sm ? 8 : 9,
     ...overrides,
   };
@@ -129,7 +133,7 @@ export function rValueLabel(w, overrides = {}) {
 export function rNameText(w, overrides = {}) {
   const { sm } = bp(w);
   return {
-    color: '#8B7E6A',
+    color: AXIS_LABEL_COLOR,
     fontSize: sm ? 8 : 9,
     ...overrides,
   };

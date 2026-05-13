@@ -1,8 +1,8 @@
 import { useContext, useMemo, useState } from 'react';
 import { PlayerContext } from '../App';
-import { formatCP } from '../utils/formatters';
+import { formatCP, formatCPShort } from '../utils/formatters';
 import { tribRank, tribColor } from '../utils/tribulationSystem';
-import { bp, rGrid, rLabel, rValueLabel, rNameText } from '../utils/chartResponsive';
+import { bp, rGrid, rLabel, rValueLabel, rNameText, CHART_BREAKPOINTS } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -13,10 +13,19 @@ const T = { color: '#7D7263' };
 const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(212,168,67,0.32)' };
 const SL = { color: 'rgba(212,168,67,0.08)', type: 'dashed' };
 
+const COMPOSITE_TOP_N = 15; // composite score leaderboard
+const AUTOCOMPLETE_MAX = 8;  // max autocomplete suggestions
+
+/* 3D scatter camera constants */
+const SCATTER3D_BASE_DIST  = 400;
+const SCATTER3D_ZOOM_SCALE = 3.2;
+const SCATTER3D_ELEVATION  = 20;
+const SCATTER3D_AZIMUTH    = -35;
+
 export default function AdvancedStatistics() {
   const rawPlayers = useContext(PlayerContext);
   const [calcCP, setCalcCP] = useState('');
-  const [zoom3DScatter, setZoom3DScatter] = useState(() => window.innerWidth < 640 ? 59 : 75);
+  const [zoom3DScatter, setZoom3DScatter] = useState(() => window.innerWidth < CHART_BREAKPOINTS.sm ? 59 : 75);
   const [scatter3DSearch, setScatter3DSearch] = useState('');
   const [scatter3DDropdownOpen, setScatter3DDropdownOpen] = useState(false);
 
@@ -37,13 +46,15 @@ export default function AdvancedStatistics() {
     const tribCP = {};
     for (const p of players) {
       if (!p.tribulation || !p.cp) continue;
-      if (!tribCP[p.tribulation]) tribCP[p.tribulation] = { sum: 0, count: 0 };
-      tribCP[p.tribulation].sum += p.cp;
-      tribCP[p.tribulation].count++;
+      // Group by prefix only (strip trailing digit) e.g. TI1/TI2/TI3 → TI
+      const prefix = p.tribulation.replace(/\d+$/, '').toUpperCase();
+      if (!tribCP[prefix]) tribCP[prefix] = { sum: 0, count: 0 };
+      tribCP[prefix].sum += p.cp;
+      tribCP[prefix].count++;
     }
     const tribAvg = Object.entries(tribCP)
       .map(([t, v]) => ({ trib: t, avgCP: v.sum / v.count, count: v.count }))
-      .sort((a, b) => tribRank(a.trib) - tribRank(b.trib)); // ascending rank (BI→DG left→right)
+      .sort((a, b) => tribRank(a.trib) - tribRank(b.trib));
 
     const chaosCPs = players.filter(p => p.hasChaos && p.cp > 0).map(p => p.cp);
     const noChaosCPs = players.filter(p => !p.hasChaos && p.cp > 0).map(p => p.cp);
@@ -56,11 +67,16 @@ export default function AdvancedStatistics() {
       const tr = tribRank(p.tribulation) || 0;
       const score = (p.cp || 0) * 0.4 + (p.totalFinals || 0) * 0.3 + ((p.fdu || 0) + (p.fdd || 0)) * 0.15 + tr * 500 * 0.15;
       return { ...p, compositeScore: score };
-    }).sort((a, b) => b.compositeScore - a.compositeScore).slice(0, 15);
+    }).sort((a, b) => b.compositeScore - a.compositeScore).slice(0, COMPOSITE_TOP_N);
 
     /* ── Box plot: CP spread per tribulation prefix ── */
-    const BOX_TIERS = ['DG','SM','CE','CK','DL','GI','SI','CI','TI','GA','BI'];
-    const boxData = BOX_TIERS.map(tier => {
+    // Derive tiers present in the data, ordered by tribRank descending (strongest first)
+    const presentPrefixes = [...new Set(
+      players
+        .filter(p => p.tribulation)
+        .map(p => p.tribulation.replace(/\d+$/, '').toUpperCase())
+    )].sort((a, b) => tribRank(b) - tribRank(a));
+    const boxData = presentPrefixes.map(tier => {
       const vals = players.filter(p => p.tribulation && p.tribulation.startsWith(tier) && p.cp > 0)
                           .map(p => p.cp).sort((a, b) => a - b);
       if (vals.length === 0) return null;
@@ -70,9 +86,9 @@ export default function AdvancedStatistics() {
     }).filter(Boolean);
 
     /* ── Heatmap: FDU vs FDD density ── */
-    const BINS = 10;
     const fduAll = players.filter(p => p.fdu > 0 && p.fdd > 0).map(p => p.fdu);
     const fddAll = players.filter(p => p.fdu > 0 && p.fdd > 0).map(p => p.fdd);
+    const BINS = Math.max(5, Math.min(15, Math.ceil(Math.sqrt(fduAll.length || 25))));
     let heatData = [];
     if (fduAll.length > 0) {
       const minFDU = Math.min(...fduAll), maxFDU = Math.max(...fduAll);
@@ -89,6 +105,7 @@ export default function AdvancedStatistics() {
       heatData._minFDU = minFDU; heatData._maxFDU = maxFDU;
       heatData._minFDD = minFDD; heatData._maxFDD = maxFDD;
       heatData._step   = Math.round((maxFDU - minFDU) / BINS);
+      heatData._bins   = BINS;
     }
 
     return { median, q1, q3, mean, scatterData, tribAvg, chaosAvg, noChaosAvg, chaosCount: chaosCPs.length, noChaosCount: noChaosCPs.length, fduFdd, scored, cps, boxData, heatData };
@@ -140,7 +157,7 @@ export default function AdvancedStatistics() {
     return players
       .filter(p => p.player?.toLowerCase().includes(q))
       .sort((a, b) => (b.cp || 0) - (a.cp || 0))
-      .slice(0, 8);
+      .slice(0, AUTOCOMPLETE_MAX);
   }, [scatter3DSearch, rawPlayers]);
 
   /* ── Percentile calculator ────────────────────────────────────────────── */
@@ -183,7 +200,7 @@ export default function AdvancedStatistics() {
             <h2 className="text-sm font-display font-bold gradient-text">Finals · CP · FDU — 3D Scatter</h2>
           </div>
           <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 6 }}>Drag to rotate · Scroll/pinch to zoom · Color = Tribulation tier</div>
-          <ChartContainer option={scatter3DChart(stats.scatterData, Math.round(400 - zoom3DScatter * 3.2), scatter3DHighlights)} type="3d" />
+          <ChartContainer option={scatter3DChart(stats.scatterData, Math.round(SCATTER3D_BASE_DIST - zoom3DScatter * SCATTER3D_ZOOM_SCALE), scatter3DHighlights)} type="3d" />
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTop: '1px solid rgba(46,155,229,0.08)' }}>
             <ZoomOut size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
             <input
@@ -327,7 +344,7 @@ export default function AdvancedStatistics() {
             <BarChart3 size={15} style={{ color: 'var(--imperial-bright)' }}/>
             <h2 className="text-sm font-display font-bold gradient-text">Avg CP by Tribulation Stage</h2>
           </div>
-          <ChartContainer option={(w) => tribAvgChart(stats.tribAvg, w)} type="bar" />
+          <ChartContainer option={(w) => tribAvgChart(stats.tribAvg, w)} type="bar" maxHeight={420} />
         </GlassCard>
       </div>
 
@@ -447,7 +464,7 @@ export default function AdvancedStatistics() {
 
 function scatter3DChart(data, distance = 160, highlights = new Set()) {
   if (!data.length) return { series: [] };
-  const isMobile = window.innerWidth < 640;
+  const isMobile = window.innerWidth < CHART_BREAKPOINTS.sm;
   const hasHighlight = highlights.size > 0;
   return {
     tooltip: {
@@ -460,7 +477,7 @@ function scatter3DChart(data, distance = 160, highlights = new Set()) {
       },
     },
     grid3D: {
-      viewControl: { distance, elevation: 20, azimuth: -35, autoRotate: false },
+      viewControl: { distance, elevation: SCATTER3D_ELEVATION, azimuth: SCATTER3D_AZIMUTH, autoRotate: false },
       environment: 'rgba(0,0,0,0)',
       light: { main: { intensity: 1.2 }, ambient: { intensity: 0.4 } },
       axisLine:    { lineStyle: { color: 'rgba(201,146,11,0.22)' } },
@@ -517,33 +534,48 @@ function scatter3DChart(data, distance = 160, highlights = new Set()) {
 
 function tribAvgChart(tribAvg, w = 400) {
   if (!tribAvg.length) return { series: [] };
-  const { pick } = bp(w);
+  const { sm } = bp(w);
+  // Sort strongest (highest rank) at top
+  const sorted = [...tribAvg].sort((a, b) => b.avgCP - a.avgCP);
   return {
     tooltip: {
       trigger: 'axis', backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
+      axisPointer: { type: 'shadow' },
       formatter: p => {
-        const t = tribAvg[p[0].dataIndex];
-        return `<b style="color:${tribColor(t.trib)}">${t.trib}</b><br/>Avg CP: ${formatCP(t.avgCP)}<br/>Cultivators: ${t.count}`;
+        const t = sorted[p[0].dataIndex];
+        return `<b style="color:${tribColor(t.trib)}">${t.trib}</b><br/>Avg CP: <b>${formatCP(t.avgCP)}</b><br/>Cultivators: ${t.count}`;
       },
     },
-    grid: rGrid(w, { top: 16 }),
+    grid: rGrid(w, { top: 8, right: sm ? 24 : 16, left: 8 }),
     xAxis: {
-      type: 'category', data: tribAvg.map(t => t.trib),
-      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { color: '#EDE0C4', ...rLabel(w, { rotate: pick(40, 30) }) },
-    },
-    yAxis: {
       type: 'value',
+      splitNumber: sm ? 3 : 5,
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: { ...rValueLabel(w), formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), formatter: v => formatCPShort(v), hideOverlap: true },
       splitLine: { lineStyle: SL },
     },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: sorted.map(t => t.trib),
+      axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
+      axisLabel: { color: '#EDE0C4', fontSize: sm ? 9 : 10, fontFamily: 'monospace', fontWeight: 700 },
+    },
     series: [{
-      type: 'bar', data: tribAvg.map(t => t.avgCP), barWidth: '60%',
+      type: 'bar',
+      data: sorted.map(t => t.avgCP),
+      barWidth: sm ? 8 : 11,
       itemStyle: {
-        borderRadius: [4, 4, 0, 0],
-        color: p => tribColor(tribAvg[p.dataIndex].trib) || '#4B5563',
+        borderRadius: [0, 4, 4, 0],
+        color: p => tribColor(sorted[p.dataIndex].trib) || '#4B5563',
+      },
+      label: {
+        show: !sm,
+        position: 'right',
+        formatter: p => formatCPShort(sorted[p.dataIndex].avgCP),
+        color: '#7D7263',
+        fontSize: 9,
       },
       emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.30)' } },
     }],
@@ -551,23 +583,28 @@ function tribAvgChart(tribAvg, w = 400) {
 }
 
 function fduFddChart(data, w = 400) {
+  const { sm } = bp(w);
   return {
     tooltip: {
       trigger: 'item', backgroundColor: TB.bg, borderColor: 'rgba(201,34,24,0.35)', borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => `<b>${p.data[2]}</b><br/>FDU: ${p.data[0]}<br/>FDD: ${p.data[1]}`,
     },
-    grid: rGrid(w, { top: 16 }),
+    grid: rGrid(w, { top: 16, bottom: sm ? 32 : 24, left: sm ? 24 : 16 }),
     xAxis: {
-      name: 'FDU', nameTextStyle: rNameText(w), type: 'value',
+      name: 'FDU', nameLocation: 'middle', nameGap: sm ? 22 : 26,
+      nameTextStyle: { ...rNameText(w), color: '#7D7263' },
+      type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: rValueLabel(w),
+      axisLabel: { ...rValueLabel(w), hideOverlap: true },
       splitLine: { lineStyle: SL },
     },
     yAxis: {
-      name: 'FDD', nameTextStyle: rNameText(w), type: 'value',
+      name: 'FDD', nameLocation: 'middle', nameGap: sm ? 32 : 42,
+      nameTextStyle: { ...rNameText(w), color: '#7D7263' },
+      type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.12)' } },
-      axisLabel: rValueLabel(w),
+      axisLabel: { ...rValueLabel(w), hideOverlap: true },
       splitLine: { lineStyle: SL },
     },
     series: [{
@@ -599,12 +636,12 @@ function boxPlotChart(boxData, w = 400) {
           Max: ${formatCP(max)}<br/>Q3: ${formatCP(q3)}<br/>Median: ${formatCP(med)}<br/>Q1: ${formatCP(q1)}<br/>Min: ${formatCP(min)}`;
       },
     },
-    grid: rGrid(w),
+    grid: rGrid(w, { bottom: pick(52, 36), right: pick(16, 10) }),
     xAxis: {
       type: 'category',
       data: boxData.map(b => b.tier),
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { color: '#EDE0C4', ...rLabel(w, { rotate: pick(40, 30) }) },
+      axisLabel: { color: '#EDE0C4', ...rLabel(w, { rotate: pick(40, 30), interval: 0 }) },
     },
     yAxis: {
       type: 'log',
@@ -627,8 +664,8 @@ function boxPlotChart(boxData, w = 400) {
 
 function heatmapChart(heatData, w = 400) {
   if (!heatData || !heatData.length) return { series: [] };
-  const { pick } = bp(w);
-  const BINS = 10;
+  const { sm, pick } = bp(w);
+  const BINS = heatData._bins || 10;
   const minFDU = heatData._minFDU || 0;
   const minFDD = heatData._minFDD || 0;
   const step   = heatData._step || 50;
@@ -652,20 +689,22 @@ function heatmapChart(heatData, w = 400) {
       textStyle: rNameText(w),
       itemWidth: pick(10, 15), itemHeight: pick(80, 120),
     },
-    grid: rGrid(w, { bottom: pick(64, 52) }),
+    grid: rGrid(w, { bottom: pick(64, 52), left: sm ? 24 : 16 }),
     xAxis: {
       type: 'category',
       data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDU + i * step)}`),
-      name: 'FDU', nameTextStyle: rNameText(w),
+      name: 'FDU', nameLocation: 'middle', nameGap: sm ? 22 : 26,
+      nameTextStyle: { ...rNameText(w), color: '#7D7263' },
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: { ...rLabel(w, { rotate: pick(40, 30) }), fontSize: pick(7, 8) },
+      axisLabel: { ...rLabel(w, { rotate: pick(40, 30) }), fontSize: pick(7, 8), hideOverlap: true },
     },
     yAxis: {
       type: 'category',
       data: Array.from({ length: BINS }, (_, i) => `${Math.round(minFDD + i * step)}`),
-      name: 'FDD', nameTextStyle: rNameText(w),
+      name: 'FDD', nameLocation: 'middle', nameGap: sm ? 32 : 42,
+      nameTextStyle: { ...rNameText(w), color: '#7D7263' },
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: rLabel(w, { fontSize: pick(7, 8) }),
+      axisLabel: { ...rLabel(w, { fontSize: pick(7, 8) }), hideOverlap: true },
     },
     series: [{
       type: 'heatmap',

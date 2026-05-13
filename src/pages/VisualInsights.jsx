@@ -13,6 +13,19 @@ import { Radar, Flame, Users, Zap, ScatterChart, BarChart2 } from 'lucide-react'
 const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
 const SL = { color: 'rgba(201,146,11,0.08)', type: 'dashed' };
 
+/* Named limits */
+const RADAR_TOP_N        = 10;
+const LEADERBOARD_TOP_N  = 15;
+const GUILD_AVG_TOP_N    = 10;
+
+/* Shared metric color map — used in legend and bar rows */
+const METRIC_COLORS = {
+  'Heal Up':    '#1EBD82',
+  'Heal Down':  '#14B8A6',
+  'Beast Up':   '#00BFFF',
+  'Beast Down': '#B026FF',
+};
+
 export default function VisualInsights() {
   const rawPlayers = useContext(PlayerContext);
   const players = useMemo(() => rawPlayers || [], [rawPlayers]);
@@ -43,7 +56,7 @@ export default function VisualInsights() {
     // Top 10 by Total Finals
     const top10 = [...topPlayers]
       .sort((a, b) => num(b, 'Total Finals') - num(a, 'Total Finals'))
-      .slice(0, 10);
+      .slice(0, RADAR_TOP_N);
 
     const maxOf = k => Math.max(...top10.map(r => num(r, k)), 1);
     const maxCP       = maxOf('CP');
@@ -125,7 +138,7 @@ export default function VisualInsights() {
     const guildAvgData = Object.entries(guildMap)
       .map(([name, cps]) => ({ name, avg: cps.reduce((s, v) => s + v, 0) / cps.length }))
       .sort((a, b) => b.avg - a.avg)
-      .slice(0, 10);
+      .slice(0, GUILD_AVG_TOP_N);
 
     return { top5, guildAvgData };
   }, [players]);
@@ -136,7 +149,7 @@ export default function VisualInsights() {
       <GlassCard variant="cyan">
         <div className="flex items-center gap-2 mb-3">
           <Radar size={15} style={{ color: 'var(--azure-bright)' }}/>
-          <h2 className="text-sm font-display font-bold gradient-text">Top 10 Finals — Combat Attribute Radar</h2>
+          <h2 className="text-sm font-display font-bold gradient-text">{`Top ${RADAR_TOP_N} Finals — Combat Attribute Radar`}</h2>
         </div>
         {radarData.length === 0
           ? <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--muted)', fontSize: 12 }}>Loading radar data…</div>
@@ -204,7 +217,7 @@ export default function VisualInsights() {
         <GlassCard variant="purple">
           <div className="flex items-center gap-2 mb-2">
             <Zap size={15} style={{ color: 'var(--imperial-bright)' }}/>
-            <h2 className="text-sm font-display font-bold gradient-text">Guild Avg CP — Top 10</h2>
+            <h2 className="text-sm font-display font-bold gradient-text">{`Guild Avg CP — Top ${GUILD_AVG_TOP_N}`}</h2>
           </div>
           <ChartContainer option={(w) => guildAvgChart(insights.guildAvgData, w)} type="bar" maxHeight={320} />
         </GlassCard>
@@ -214,10 +227,10 @@ export default function VisualInsights() {
       <GlassCard variant="red">
         <div className="flex items-center gap-2 mb-2">
           <Flame size={15} style={{ color: 'var(--cinnabar-bright)' }}/>
-          <h2 className="text-sm font-display font-bold gradient-text">CP Leaderboard Race — Top 15</h2>
+          <h2 className="text-sm font-display font-bold gradient-text">{`CP Leaderboard Race — Top ${LEADERBOARD_TOP_N}`}</h2>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
-          {[...players].sort((a, b) => (b.cp || 0) - (a.cp || 0)).slice(0, 15).map((p, i) => {
+          {[...players].sort((a, b) => (b.cp || 0) - (a.cp || 0)).slice(0, LEADERBOARD_TOP_N).map((p, i) => {
             const maxCP = insights.top5[0]?.cp || 1;
             const pct = (p.cp / maxCP) * 100;
             const barColor = i === 0
@@ -310,7 +323,7 @@ export default function VisualInsights() {
             </div>
             {/* Legend row */}
             <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-              {[['Heal Up','#1EBD82'],['Heal Down','#14B8A6'],['Beast Up','#00BFFF'],['Beast Down','#B026FF']].map(([label, color]) => (
+              {Object.entries(METRIC_COLORS).map(([label, color]) => (
                 <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} />
                   <span style={{ fontSize: 9, color: 'var(--muted)' }}>{label}</span>
@@ -325,10 +338,10 @@ export default function VisualInsights() {
               const maxBU = Math.max(...sorted.map(r => r.beastUp),  1);
               const maxBD = Math.max(...sorted.map(r => r.beastDown),1);
               const metrics = [
-                { key: 'healUp',    max: maxHU, color: '#1EBD82' },
-                { key: 'healDown',  max: maxHD, color: '#14B8A6' },
-                { key: 'beastUp',   max: maxBU, color: '#00BFFF' },
-                { key: 'beastDown', max: maxBD, color: '#B026FF' },
+                { key: 'healUp',    max: maxHU, color: METRIC_COLORS['Heal Up'] },
+                { key: 'healDown',  max: maxHD, color: METRIC_COLORS['Heal Down'] },
+                { key: 'beastUp',   max: maxBU, color: METRIC_COLORS['Beast Up'] },
+                { key: 'beastDown', max: maxBD, color: METRIC_COLORS['Beast Down'] },
               ];
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 320, overflowY: 'auto', paddingRight: 4 }}>
@@ -736,19 +749,25 @@ function healerFighterChart(rows, hlRole = null, w = 400) {
         return `<b>${name}</b><br/>${guild}<br/>Heal: ${totalHeal.toFixed(1)} · Beast: ${totalBeast.toFixed(1)}<br/>Role: <b style="color:${ROLE_COLOR[role]}">${role}</b><br/>CP: ${formatCP(cp)}`;
       },
     },
-    grid: rGrid(w, { top: 24 }),
+    grid: rGrid(w, { top: 24, bottom: bp(w).sm ? 32 : 24, left: bp(w).sm ? 24 : 16 }),
     xAxis: {
-      name: 'Total Heal', nameTextStyle: rNameText(w),
+      name: 'Total Heal',
+      nameLocation: 'middle',
+      nameGap: bp(w).sm ? 22 : 26,
+      nameTextStyle: { ...rNameText(w), color: '#7D7263' },
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: rValueLabel(w),
+      axisLabel: { ...rValueLabel(w), hideOverlap: true },
       splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
     },
     yAxis: {
-      name: 'Total Beast', nameTextStyle: rNameText(w),
+      name: 'Total Beast',
+      nameLocation: 'middle',
+      nameGap: bp(w).sm ? 32 : 42,
+      nameTextStyle: { ...rNameText(w), color: '#7D7263' },
       type: 'value',
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
-      axisLabel: rValueLabel(w),
+      axisLabel: { ...rValueLabel(w), hideOverlap: true },
       splitLine: { lineStyle: { color: 'rgba(201,146,11,0.08)', type: 'dashed' } },
     },
     // Split into 3 series (one per role) so shadowBlur/opacity are plain values — callbacks don't work for shadow props in ECharts

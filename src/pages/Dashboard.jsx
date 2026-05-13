@@ -1,16 +1,17 @@
 import React, { useContext, useMemo } from 'react';
 import { PlayerContext } from '../App';
-import { formatCP } from '../utils/formatters';
+import { formatCP, formatCPShort } from '../utils/formatters';
 import { tribColor } from '../utils/tribulationSystem';
 import { computeGlobalStats } from '../utils/statsEngine';
 import { bp, rGrid, rLabel, rValueLabel } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import StatCard from '../components/StatCard';
+import { SectionHeader } from '../components/StatCard';
 import ChartContainer from '../components/ChartContainer';
 import { AnimatedCounter } from '../hooks/useAnimatedCounter';
 import { motion } from 'framer-motion';
 import {
-  Users, Sword, Shield, Zap, Crown, Flame, Activity, TrendingUp, Trophy, Award,
+  Users, Sword, Shield, Zap, Crown, Flame, Activity, TrendingUp, Trophy, Award, Building2,
 } from 'lucide-react';
 
 /* ─── Cultivation-themed ECharts base styles ─────────────────────────────── */
@@ -26,19 +27,9 @@ const baseTooltip = {
   textStyle: { color: '#EDE0C4', fontSize: 11, fontFamily: 'Inter' },
 };
 
-/* ─── Tribulation color mapping ──────────────────────────────────────────── */
-const TRIB_COLORS = {
-  DG: '#D4A843', SM: '#CB4335', CE: '#D4813A',
-  CK: '#B03A8E', DL: '#9B59B6', GI: '#2E9BE5',
-  SI: '#1EBD82', CI: '#1EBD82', TI: '#5D7FC2',
-  GA: '#A07830', BI: '#7A5C3A',
-};
-
-function getTribColor(t) {
-  if (!t) return '#4B5563';
-  const key = t.toString().toUpperCase().substring(0, 2);
-  return TRIB_COLORS[key] || tribColor(t) || '#4B5563';
-}
+/* ─── Leaderboard display range ────────────────────────────────────────── */
+const RANKS_START = 3;  // 0-based: index 3 = rank 4
+const RANKS_END   = 10; // exclusive: ranks 4–10
 
 /* ─── Chart builders ─────────────────────────────────────────────────────── */
 function buildGuildChart(topGuilds, w = 400) {
@@ -60,8 +51,9 @@ function buildGuildChart(topGuilds, w = 400) {
     grid: rGrid(w, { right: 16, top: 8 }),
     xAxis: {
       type: 'value',
+      splitNumber: bp(w).sm ? 3 : 5,
       axisLine: { lineStyle: { color: CHART_BORDER } },
-      axisLabel: { ...rValueLabel(w), color: CHART_TEXT, formatter: v => formatCP(v) },
+      axisLabel: { ...rValueLabel(w), color: CHART_TEXT, formatter: v => formatCPShort(v), hideOverlap: true },
       splitLine: { lineStyle: { color: CHART_BORDER, type: 'dashed' } },
     },
     yAxis: {
@@ -72,7 +64,8 @@ function buildGuildChart(topGuilds, w = 400) {
       axisLabel: { color: '#EDE0C4', ...rLabel(w, { width: pick(70, 100) }) },
     },
     series: [{
-      type: 'bar', data: guilds.map(g => g.totalCP), barWidth: 11,
+      type: 'bar', data: guilds.map(g => g.totalCP),
+      barWidth: Math.max(4, Math.min(16, Math.round(120 / guilds.length))),
       itemStyle: {
         borderRadius: [0, 5, 5, 0],
         color: p => colors[p.dataIndex % colors.length],
@@ -84,7 +77,7 @@ function buildGuildChart(topGuilds, w = 400) {
 
 function buildTribChart(tribDist) {
   const entries = Object.entries(tribDist)
-    .map(([t, v]) => ({ name: t, value: v, color: getTribColor(t) }))
+    .map(([t, v]) => ({ name: t, value: v, color: tribColor(t) || '#4B5563' }))
     .sort((a, b) => b.value - a.value);
 
   if (!entries.length) return { series: [] };
@@ -121,7 +114,7 @@ function buildCPDistributionChart(players, w = 400) {
   if (!players.length) return { series: [] };
   const { pick } = bp(w);
   const cps = players.map(p => p.cp || 0).filter(v => v > 0).sort((a, b) => a - b);
-  const bins = 20;
+  const bins = Math.min(30, Math.max(10, Math.ceil(Math.sqrt(cps.length))));
   const min = cps[0]; const max = cps[cps.length - 1];
   const step = (max - min) / bins || 1;
   const counts = new Array(bins).fill(0);
@@ -180,23 +173,25 @@ export default function Dashboard() {
       transition={{ duration: 0.5 }}
     >
       {/* ── Hero stat cards ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
-        <StatCard label="Cultivators"   value={<AnimatedCounter value={stats.total} />}         icon={<Users    size={16}/>} color="cyan"   delay={0.05}/>
-        <StatCard label="Avg CP"        value={formatCP(stats.avgCP)}            icon={<Sword    size={16}/>} color="gold"   delay={0.10} sub={`peak ${formatCP(stats.maxCP)}`}/>
-        <StatCard label="Peak CP"       value={formatCP(stats.maxCP)}            icon={<Crown    size={16}/>} color="red"    delay={0.15}/>
-        <StatCard label="Active"        value={<AnimatedCounter value={stats.activeCount} />}    icon={<Zap   size={16}/>} color="jade"   delay={0.20} sub={`${Math.round(stats.activeCount/(stats.total||1)*100)}% active`}/>
-        <StatCard label="Chaos Users"   value={<AnimatedCounter value={stats.chaosCount} />}    icon={<Flame  size={16}/>} color="purple" delay={0.25} sub={`${((stats.chaosCount/(stats.total||1))*100).toFixed(1)}%`}/>
-        <StatCard label="Guilds"         value={<AnimatedCounter value={stats.guildCount} />}    icon={<Shield   size={16}/>} color="cyan"   delay={0.30}/>
-        <StatCard label="AFK"           value={<AnimatedCounter value={stats.afkCount} />}       icon={<Activity size={16}/>} color="gold"   delay={0.35}/>
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <StatCard label="Cultivators"   value={<AnimatedCounter value={stats.total} />}          icon={<Users     size={16}/>} color="cyan"   delay={0.05} gradient/>
+        <StatCard label="Avg CP"        value={formatCP(stats.avgCP)}                             icon={<Sword     size={16}/>} color="gold"   delay={0.10}/>
+        <StatCard label="Chaos Users"   value={<AnimatedCounter value={stats.chaosCount} />}      icon={<Flame     size={16}/>} color="purple" delay={0.15} sub={`${((stats.chaosCount/(stats.total||1))*100).toFixed(1)}%`}/>
+        <StatCard label="Peak CP"       value={formatCP(stats.maxCP)}                             icon={<Crown     size={16}/>} color="red"    delay={0.20} gradient/>
+        <StatCard label="Active"        value={<AnimatedCounter value={stats.activeCount} />}     icon={<Zap       size={16}/>} color="jade"   delay={0.25} gradient/>
+        <StatCard label="Guilds"        value={<AnimatedCounter value={stats.guildCount} />}      icon={<Shield    size={16}/>} color="cyan"   delay={0.30}/>
+        <StatCard label="AFK"           value={<AnimatedCounter value={stats.afkCount} />}        icon={<Activity  size={16}/>} color="gold"   delay={0.35}/>
+        <StatCard label="Top Guild · CP" value={
+          <span style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: 'clamp(11px, 1.6vw, 20px)', lineHeight: 1.2 }}>
+            {stats.topGuilds[0]?.name || '—'}
+          </span>
+        } icon={<Building2 size={16}/>} color="gold" delay={0.40} sub={stats.topGuilds[0] ? formatCP(stats.topGuilds[0].totalCP) : '—'} gradient/>
       </div>
 
       {/* ── Top cultivators ── */}
       <GlassCard variant="gold" delay={0.30}>
-        <div className="flex items-center gap-2 mb-5">
-          <Crown size={15} style={{ color: 'var(--gold-bright)' }}/>
-          <h2 className="text-sm font-display font-bold gradient-text-gold">
-            Celestial Rankings — Top 10
-          </h2>
+        <div className="mb-5">
+          <SectionHeader icon={<Crown size={12} />} label="Celestial Rankings — Top 10" />
         </div>
 
         {/* ── Podium — positions 1·2·3 ── */}
@@ -306,9 +301,9 @@ export default function Dashboard() {
                       <span style={{
                         display: 'inline-block',
                         padding: '2px 8px', borderRadius: 20, fontSize: 9,
-                        background: `${getTribColor(p.tribulation)}22`,
-                        border: `1px solid ${getTribColor(p.tribulation)}55`,
-                        color: getTribColor(p.tribulation),
+                        background: `${tribColor(p.tribulation) || '#4B5563'}22`,
+                        border: `1px solid ${tribColor(p.tribulation) || '#4B5563'}55`,
+                        color: tribColor(p.tribulation) || '#4B5563',
                         fontFamily: 'monospace', fontWeight: 700,
                       }}>{p.tribulation || '—'}</span>
 
@@ -331,6 +326,7 @@ export default function Dashboard() {
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      boxShadow: `0 8px 24px -4px ${color}30, 0 2px 8px -2px ${color}22`,
                     }}>
                       <span style={{
                         fontFamily: 'var(--font-deco)', fontSize: isFirst ? 40 : 30,
@@ -345,22 +341,14 @@ export default function Dashboard() {
         })()}
 
         {/* ── Ranks 4–10 leaderboard ── */}
-        {stats.topPlayers.length > 3 && (
+        {stats.topPlayers.length > RANKS_START && (
           <>
-            <div style={{
-              borderTop: '1px solid rgba(201,146,11,0.15)',
-              marginBottom: 10,
-              paddingTop: 12,
-              display: 'flex', alignItems: 'center', gap: 6,
-            }}>
-              <TrendingUp size={11} style={{ color: 'var(--muted)' }} />
-              <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                Ranks 4 – 10
-              </span>
+            <div style={{ marginBottom: 10, paddingTop: 12 }}>
+              <SectionHeader icon={<TrendingUp size={10} />} label={`Ranks ${RANKS_START + 1} – ${RANKS_END}`} />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-              {stats.topPlayers.slice(3, 10).map((p, i) => {
-                const rank = i + 4;
+              {stats.topPlayers.slice(RANKS_START, RANKS_END).map((p, i) => {
+                const rank = i + RANKS_START + 1;
                 const isEven = i % 2 === 0;
                 return (
                   <motion.div
@@ -402,9 +390,9 @@ export default function Dashboard() {
                     {/* Tribulation badge */}
                     <span style={{
                       padding: '1px 7px', borderRadius: 20, fontSize: 9,
-                      background: `${getTribColor(p.tribulation)}18`,
-                      border: `1px solid ${getTribColor(p.tribulation)}44`,
-                      color: getTribColor(p.tribulation),
+                      background: `${tribColor(p.tribulation) || '#4B5563'}22`,
+                      border: `1px solid ${tribColor(p.tribulation) || '#4B5563'}55`,
+                      color: tribColor(p.tribulation) || '#4B5563',
                       fontFamily: 'monospace', fontWeight: 700,
                       flexShrink: 0,
                     }}>{p.tribulation || '—'}</span>
@@ -424,22 +412,16 @@ export default function Dashboard() {
 
       {/* ── Charts row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <GlassCard variant="cyan" delay={0.40}>
-          <div className="flex items-center gap-2 mb-2">
-            <Shield size={15} style={{ color: 'var(--azure-bright)' }}/>
-            <h2 className="text-sm font-display font-bold gradient-text">
-              Guild Power Rankings
-            </h2>
+        <GlassCard variant="cyan" delay={0.40} className="glass-card--chart">
+          <div className="mb-2">
+            <SectionHeader icon={<Shield size={11} />} label="Guild Power Rankings" />
           </div>
           <ChartContainer option={(w) => buildGuildChart(stats.topGuilds, w)} type="bar" maxHeight={320} />
         </GlassCard>
 
-        <GlassCard variant="purple" delay={0.45}>
-          <div className="flex items-center gap-2 mb-2">
-            <TrendingUp size={15} style={{ color: 'var(--imperial-bright)' }}/>
-            <h2 className="text-sm font-display font-bold gradient-text">
-              Tribulation Distribution
-            </h2>
+        <GlassCard variant="purple" delay={0.45} className="glass-card--chart">
+          <div className="mb-2">
+            <SectionHeader icon={<TrendingUp size={11} />} label="Tribulation Distribution" />
           </div>
           <ChartContainer option={buildTribChart(stats.tribDistribution)} type="pie" maxHeight={260} />
         </GlassCard>
@@ -447,20 +429,17 @@ export default function Dashboard() {
 
       {/* ── Bottom row ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <GlassCard variant="red" delay={0.50} className="lg:col-span-2">
-          <div className="flex items-center gap-2 mb-2">
-            <Activity size={15} style={{ color: 'var(--cinnabar-bright)' }}/>
-            <h2 className="text-sm font-display font-bold gradient-text">
-              CP Distribution
-            </h2>
+        <GlassCard variant="red" delay={0.50} className="lg:col-span-2 glass-card--chart">
+          <div className="mb-2">
+            <SectionHeader icon={<Activity size={11} />} label="CP Distribution" />
           </div>
           <ChartContainer option={(w) => buildCPDistributionChart(players, w)} type="bar" />
         </GlassCard>
 
         <GlassCard variant="gold" delay={0.55}>
-          <h2 className="text-sm font-display font-bold gradient-text-gold mb-3">
-            Realm Summary
-          </h2>
+          <div className="mb-3">
+            <SectionHeader icon={<TrendingUp size={11} />} label="Realm Summary" />
+          </div>
           <div className="space-y-2" style={{ fontSize: 11 }}>
             {[
               { label: 'Avg Total Finals', val: players.length

@@ -4,7 +4,7 @@ import { useDataContext } from '../../context/DataContext';
 import { formatTime, formatCP } from '../../utils/formatters';
 import { tribColor, tribLabel } from '../../utils/tribulationSystem';
 import { useDebounce } from '../../hooks/useDebounce';
-import { Menu } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Header = ({ onMenuClick }) => {
@@ -82,6 +82,9 @@ const Header = ({ onMenuClick }) => {
 
       <div className="header-right">
         <div className="search-box" ref={boxRef} aria-expanded={showDrop || showPanel}>
+          <span className="search-icon-wrap" aria-hidden="true">
+            <Search size={13} />
+          </span>
           <input
             type="text"
             ref={inputRef}
