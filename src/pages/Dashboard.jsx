@@ -114,21 +114,29 @@ function buildCPDistributionChart(players, w = 400) {
   if (!players.length) return { series: [] };
   const { pick } = bp(w);
   const cps = players.map(p => p.cp || 0).filter(v => v > 0).sort((a, b) => a - b);
-  const bins = Math.min(30, Math.max(10, Math.ceil(Math.sqrt(cps.length))));
-  const min = cps[0]; const max = cps[cps.length - 1];
-  const step = (max - min) / bins || 1;
+
+  // Log-scale binning: data spans ~4 orders of magnitude (1B–12T),
+  // so linear bins pack 70%+ of players into the first bucket.
+  const bins = 12;
+  const logMin = Math.log10(cps[0]);
+  const logMax = Math.log10(cps[cps.length - 1]);
+  const logStep = (logMax - logMin) / bins;
+
+  const edges  = Array.from({ length: bins + 1 }, (_, i) => Math.pow(10, logMin + logStep * i));
+  const labels = edges.slice(0, bins).map(v => formatCP(v));
   const counts = new Array(bins).fill(0);
-  const labels = [];
-  for (let i = 0; i < bins; i++) {
-    labels.push(formatCP(min + step * i));
-  }
+
   for (const v of cps) {
-    const idx = Math.min(Math.floor((v - min) / step), bins - 1);
+    const idx = Math.min(Math.floor((Math.log10(v) - logMin) / logStep), bins - 1);
     counts[idx]++;
   }
+
   return {
     tooltip: { ...baseTooltip, trigger: 'axis',
-      formatter: p => `Range: ${labels[p[0].dataIndex]}<br/>Count: <b>${p[0].value}</b>`,
+      formatter: p => {
+        const i = p[0].dataIndex;
+        return `CP: <b>${formatCP(edges[i])}</b> – <b>${formatCP(edges[i + 1])}</b><br/>Cultivators: <b>${p[0].value}</b>`;
+      },
     },
     grid: rGrid(w),
     xAxis: {
