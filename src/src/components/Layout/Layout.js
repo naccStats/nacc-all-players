@@ -75,13 +75,7 @@ const Layout = ({ children }) => {
   const watermark = routeWatermarks[location.pathname] ?? '';
 
   return (
-    <div className={`app-shell${moreOpen ? ' more-open' : ''}`}>
-      {/* Ambient drifting background orbs */}
-      <div className="bg-orbs" aria-hidden="true">
-        <div className="bg-orb bg-orb--1" />
-        <div className="bg-orb bg-orb--2" />
-        <div className="bg-orb bg-orb--3" />
-      </div>
+    <div className="app-shell">
       <div
         className={`sidebar-overlay${sidebarOpen ? ' active' : ''}`}
         onClick={closeSidebar}
@@ -93,7 +87,7 @@ const Layout = ({ children }) => {
         collapsed={collapsed}
         onToggleCollapse={toggleCollapse}
       />
-      <div className="main-area" style={{ position: 'relative', overflowY: 'auto', overflowX: 'hidden', height: '100vh' }}>
+      <div className="main-area" style={{ position: 'relative', overflowY: 'auto', height: '100vh' }}>
         <Header onMenuClick={openSidebar} />
         <main className="content-area" style={{ position: 'relative', zIndex: 1 }}>
           {/* Page watermark */}
@@ -147,26 +141,32 @@ const Layout = ({ children }) => {
         </button>
       </nav>
 
-      {/* More — scrim: always rendered, toggled with CSS */}
-      <div
-        className={`more-sheet-scrim${moreOpen ? ' visible' : ''}`}
-        onClick={() => setMoreOpen(false)}
-        aria-hidden="true"
-      />
-
       {/* More — bottom sheet */}
       <AnimatePresence>
         {moreOpen && (
-          <motion.div
-            ref={sheetRef}
-            className="more-sheet"
-            role="dialog"
-            aria-label="More pages"
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ duration: 0.16, ease: [0.25, 0.46, 0.45, 0.94] }}
-          >
+          <>
+            {/* Scrim */}
+            <motion.div
+              className="more-sheet-scrim"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={() => setMoreOpen(false)}
+              aria-hidden="true"
+            />
+
+            {/* Sheet */}
+            <motion.div
+              ref={sheetRef}
+              className="more-sheet"
+              role="dialog"
+              aria-label="More pages"
+              initial={{ y: '100%', opacity: 0.6 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0.6 }}
+              transition={{ type: 'spring', stiffness: 340, damping: 32, mass: 0.9 }}
+            >
               {/* Handle */}
               <div className="more-sheet-handle" />
 
@@ -187,10 +187,13 @@ const Layout = ({ children }) => {
                 {moreNavItems.map(({ path, label, icon: Icon, deco, desc }, idx) => {
                   const isActive = location.pathname === path;
                   return (
-                    <button
+                    <motion.button
                       key={path}
                       className={`more-sheet-item${isActive ? ' active' : ''}`}
                       onClick={() => { navigate(path); setMoreOpen(false); }}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.2, delay: idx * 0.055 }}
                     >
                       <div className="more-sheet-item-icon">
                         <Icon size={18} />
@@ -200,11 +203,12 @@ const Layout = ({ children }) => {
                         <span className="more-sheet-item-desc">{desc}</span>
                       </div>
                       <span className="more-sheet-item-deco" aria-hidden="true">{deco}</span>
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

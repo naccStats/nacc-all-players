@@ -15,14 +15,13 @@ const GlassCard = ({
   return (
     <motion.div
       className={['glass-card', variantClass, interactive, className].filter(Boolean).join(' ')}
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, delay, ease: [0.25, 0.46, 0.45, 0.94] }}
-      whileHover={onClick ? { scale: 1.015, transition: { duration: 0.18 } } : undefined}
+      transition={{ duration: 0.38, delay, ease: 'easeOut' }}
+      whileHover={onClick ? { scale: 1.01, transition: { duration: 0.18 } } : undefined}
       onClick={onClick}
       {...props}
     >
-      <span className="glass-shimmer" aria-hidden="true" />
       {children}
     </motion.div>
   );

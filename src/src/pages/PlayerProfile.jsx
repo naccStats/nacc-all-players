@@ -183,22 +183,18 @@ export default function PlayerProfile() {
             )}
           </div>
 
-          {/* Badges — row 1: tier + percentile */}
+          {/* Badges */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
             <span style={{
               padding: '3px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700,
               fontFamily: 'var(--font-title)', letterSpacing: '0.1em',
               background: `${tierColor}22`, border: `1px solid ${tierColor}66`, color: tierColor,
-              boxShadow: `0 0 12px ${tierColor}30`,
             }}>{tier}</span>
             {rank && (
               <span style={{ padding: '3px 10px', borderRadius: 20, fontSize: 10, background: 'rgba(201,146,11,0.08)', border: '1px solid rgba(201,146,11,0.25)', color: 'var(--gold-pale)' }}>
                 Top {pctRank.toFixed(1)}%
               </span>
             )}
-          </div>
-          {/* Badges — row 2: tribulation + chaos beast + updated status */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
             <span style={{
               padding: '3px 10px', borderRadius: 20, fontSize: 10, fontWeight: 600,
               background: `${tc}22`, border: `1px solid ${tc}66`, color: tc,
@@ -253,24 +249,11 @@ export default function PlayerProfile() {
                     </span>
                   </div>
                   <div style={{ position: 'relative', height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 999 }}>
-                    {/* avg marker with tooltip-style label */}
+                    {/* avg marker */}
                     <div style={{
-                      position: 'absolute', left: `${Math.min(avgPct, 96)}%`, top: -14,
-                      transform: 'translateX(-50%)', zIndex: 2,
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
-                      pointerEvents: 'none',
-                    }}>
-                      <div style={{
-                        fontSize: 7, fontFamily: 'var(--font-title)', letterSpacing: '0.06em',
-                        color: 'rgba(139,126,106,0.85)', whiteSpace: 'nowrap',
-                        background: 'rgba(13,7,24,0.80)', padding: '1px 4px', borderRadius: 3,
-                        border: '1px solid rgba(139,126,106,0.25)',
-                        marginBottom: 2,
-                      }}>avg</div>
-                      <div style={{
-                        width: 1, height: 20, background: 'rgba(139,126,106,0.55)',
-                      }} />
-                    </div>
+                      position: 'absolute', left: `${Math.min(avgPct, 98)}%`, top: -3, width: 1, height: 12,
+                      background: 'rgba(139,126,106,0.6)', transform: 'translateX(-50%)',
+                    }} />
                     <motion.div
                       style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: color, borderRadius: 999 }}
                       initial={{ width: 0 }}

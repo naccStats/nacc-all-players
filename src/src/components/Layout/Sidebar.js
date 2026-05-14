@@ -38,7 +38,6 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
     >
       {/* Brand */}
       <div className="sidebar-brand">
-        <div className="sidebar-brand-glow" aria-hidden="true" />
         <h1>NACC</h1>
         <span className="brand-deco">仙 界 榜</span>
         <span className="brand-sub">Immortal Cultivation Records</span>
@@ -58,10 +57,8 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
               onClick={onClose}
               title={collapsed ? item.label : undefined}
             >
-              {/* Hover slide-in background */}
-              <span className="nav-slide" aria-hidden="true" />
               <motion.div
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%', position: 'relative', zIndex: 1 }}
+                style={{ display: 'flex', alignItems: 'center', gap: '10px', width: '100%' }}
                 initial={false}
               >
                 {/* Decorative Chinese char when collapsed */}
@@ -70,12 +67,10 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
                     className="nav-icon"
                     style={{
                       fontFamily: "'Ma Shan Zheng', serif",
-                      fontSize: 17,
+                      fontSize: 16,
                       width: 20,
                       textAlign: 'center',
                       color: active ? 'var(--gold-bright)' : 'var(--muted)',
-                      textShadow: active ? '0 0 10px rgba(212,168,67,0.60)' : 'none',
-                      transition: 'color 0.22s, text-shadow 0.22s',
                     }}
                   >
                     {item.deco}

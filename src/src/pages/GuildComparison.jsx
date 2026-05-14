@@ -158,43 +158,9 @@ export default function GuildComparison() {
       </GlassCard>
 
       {(!dataA || !dataB) && (
-        <GlassCard style={{ textAlign: 'center', padding: '48px 28px' }}>
-          <div style={{ fontSize: 52, color: 'var(--gold-bright)', fontFamily: 'var(--font-deco)', lineHeight: 1, marginBottom: 16, textShadow: '0 0 40px rgba(212,168,67,0.30)' }}>會</div>
-          <div style={{ fontSize: 13, fontFamily: 'var(--font-title)', color: '#EDE0C4', letterSpacing: '0.08em', marginBottom: 20 }}>
-            The Trial of Factions
-          </div>
-          {/* Step indicators */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
-            {[
-              { n: '①', label: 'Select Guild A', done: !!dataA },
-              { n: '→', label: null, done: false, divider: true },
-              { n: '②', label: 'Select Guild B', done: !!dataB },
-              { n: '→', label: null, done: false, divider: true },
-              { n: '③', label: 'Witness the Verdict', done: false },
-            ].map((step, i) =>
-              step.divider ? (
-                <span key={i} style={{ color: 'rgba(212,168,67,0.25)', fontSize: 12 }}>→</span>
-              ) : (
-                <div key={i} style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                  opacity: step.done ? 1 : 0.55,
-                }}>
-                  <div style={{
-                    width: 32, height: 32, borderRadius: '50%', fontSize: 14, fontWeight: 700,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: step.done ? 'rgba(212,168,67,0.18)' : 'rgba(255,255,255,0.04)',
-                    border: step.done ? '1px solid rgba(212,168,67,0.55)' : '1px solid rgba(255,255,255,0.08)',
-                    color: step.done ? 'var(--gold-bright)' : 'var(--muted)',
-                    boxShadow: step.done ? '0 0 12px rgba(212,168,67,0.25)' : 'none',
-                    fontFamily: 'var(--font-title)',
-                  }}>{step.n}</div>
-                  <div style={{ fontSize: 9, color: step.done ? 'var(--gold-pale)' : 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.08em', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
-                    {step.label}
-                  </div>
-                </div>
-              )
-            )}
-          </div>
+        <GlassCard style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <div style={{ fontSize: 28, color: 'var(--gold-bright)', fontFamily: 'var(--font-deco)', marginBottom: 8 }}>会</div>
+          <p style={{ fontSize: 11, color: 'var(--muted)' }}>Select two guilds above to begin the trial.</p>
         </GlassCard>
       )}
 
@@ -203,48 +169,18 @@ export default function GuildComparison() {
           {/* Verdict banner */}
           {verdict && (
             <GlassCard variant={verdict.winner ? 'gold' : 'default'}>
-              <div style={{ textAlign: 'center', paddingTop: 4 }}>
-                <div style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', textTransform: 'uppercase', letterSpacing: '0.14em', marginBottom: 12 }}>
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 8 }}>
                   Power Verdict
                 </div>
                 {verdict.winner ? (
                   <>
-                    {/* Winner announcement */}
-                    <div style={{ fontSize: 22, fontFamily: 'var(--font-title)', fontWeight: 700, color: verdict.winColor, textShadow: `0 0 28px ${verdict.winColor}55`, marginBottom: 4, letterSpacing: '0.05em' }}>
-                      {verdict.winner}
+                    <div style={{ fontSize: 20, fontFamily: 'var(--font-title)', fontWeight: 700, color: verdict.winColor, textShadow: `0 0 20px ${verdict.winColor}55` }}>
+                      {verdict.winner} Prevails
                     </div>
-                    <div style={{ fontSize: 10, color: 'var(--muted)', marginBottom: 16, fontFamily: 'var(--font-title)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                      Prevails · Margin {verdict.diff} pts
+                    <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 6 }}>
+                      Score {verdict.scoreA} vs {verdict.scoreB} · margin {verdict.diff}
                     </div>
-
-                    {/* Side-by-side score display */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 11, color: COLOR_A, fontFamily: 'var(--font-title)', letterSpacing: '0.08em', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dataA.name}</div>
-                        <div style={{ fontSize: 28, fontFamily: 'var(--font-title)', fontWeight: 700, color: COLOR_A, lineHeight: 1, textShadow: `0 0 16px ${COLOR_A}55` }}>{verdict.scoreA}</div>
-                      </div>
-                      <div style={{ fontSize: 12, color: 'var(--muted)', fontFamily: 'var(--font-deco)', padding: '0 4px' }}>對</div>
-                      <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontSize: 11, color: COLOR_B, fontFamily: 'var(--font-title)', letterSpacing: '0.08em', marginBottom: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{dataB.name}</div>
-                        <div style={{ fontSize: 28, fontFamily: 'var(--font-title)', fontWeight: 700, color: COLOR_B, lineHeight: 1, textShadow: `0 0 16px ${COLOR_B}55` }}>{verdict.scoreB}</div>
-                      </div>
-                    </div>
-
-                    {/* Score ratio bar */}
-                    {(()=>{
-                      const total = parseFloat(verdict.scoreA) + parseFloat(verdict.scoreB) || 1;
-                      const pctA  = (parseFloat(verdict.scoreA) / total) * 100;
-                      return (
-                        <div style={{ height: 6, background: `linear-gradient(90deg, ${COLOR_A}30, ${COLOR_B}30)`, borderRadius: 999, overflow: 'hidden', position: 'relative' }}>
-                          <motion.div
-                            style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: `linear-gradient(90deg, ${COLOR_A}, ${COLOR_A}88)`, borderRadius: 999 }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${pctA}%` }}
-                            transition={{ duration: 0.9, delay: 0.2, ease: 'easeOut' }}
-                          />
-                        </div>
-                      );
-                    })()}
                   </>
                 ) : (
                   <div style={{ fontSize: 16, fontFamily: 'var(--font-title)', fontWeight: 700, color: 'var(--muted)' }}>

@@ -69,10 +69,7 @@ const Header = ({ onMenuClick }) => {
       </button>
 
       <div className="header-left">
-        <h2>
-          <span className="header-title-full">Immortal Cultivation Records</span>
-          <span className="header-title-short">仙 &middot; Immortal Records</span>
-        </h2>
+        <h2>Immortal Cultivation Records</h2>
         <div className="header-meta">
           <span className="status-dot" />
           <span>Records Channeled</span>

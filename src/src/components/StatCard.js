@@ -16,24 +16,16 @@ const StatCard = ({ label, value, icon, color = 'cyan', sub, delay = 0, gradient
 
   return (
     <GlassCard variant={color} delay={delay} className="stat-card">
-      <div className="stat-card-header">
-        <span
-          className="stat-icon-halo"
-          style={{
-            background: `${accent}18`,
-            boxShadow: `0 0 12px ${accent}40, 0 0 4px ${accent}28`,
-          }}
-        >
-          {React.cloneElement(icon, { size: 15, color: accent })}
-        </span>
+      <div className="stat-card-header" style={{ color: accent, opacity: 0.8 }}>
+        {icon}
         <span className="stat-label">{label}</span>
       </div>
       <motion.div
         className={`stat-value${gradient ? ' gradient-text-gold' : ''}`}
-        style={gradient ? {} : { color: accent, textShadow: `0 0 22px ${accent}60, 0 0 8px ${accent}30` }}
-        initial={{ opacity: 0, scale: 0.8 }}
+        style={gradient ? {} : { color: accent, textShadow: `0 0 18px ${accent}55` }}
+        initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.55, delay: delay + 0.1, ease: [0.34, 1.56, 0.64, 1] }}
+        transition={{ duration: 0.5, delay: delay + 0.1, ease: 'backOut' }}
       >
         {value}
       </motion.div>

@@ -214,8 +214,16 @@ export default function PlayerRankings() {
           </div>
           <button
             onClick={handleExport}
-            className="btn-export"
-          ><Download size={11} /> Export CSV</button>
+            style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 12px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
+              fontFamily: 'var(--font-title)', letterSpacing: '0.08em',
+              background: 'rgba(0,232,124,0.08)',
+              color: '#00E87C',
+              border: '1px solid rgba(0,232,124,0.3)',
+              transition: 'all 0.15s',
+            }}
+          ><Download size={10} /> Export CSV</button>
         </div>
       </GlassCard>
 
@@ -359,7 +367,7 @@ export default function PlayerRankings() {
                     <motion.tr
                       key={p.uid}
                       className="table-row-hover"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: rowBg, cursor: 'pointer', position: 'relative' }}
+                      style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: rowBg, cursor: 'pointer' }}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ duration: 0.2, delay: i * 0.01 }}

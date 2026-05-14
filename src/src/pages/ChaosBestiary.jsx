@@ -5,7 +5,7 @@ import { bp, rGrid, rValueLabel } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion } from 'framer-motion';
-import { PawPrint, Shield, Zap, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import { PawPrint, Shield, Zap, Users } from 'lucide-react';
 
 const BEASTS = ['Luohou', 'Kunpeng', 'Diting', 'Anzu'];
 
@@ -193,7 +193,7 @@ export default function ChaosBestiary() {
           const color = BEAST_COLORS[beast];
           const above = d.cpDelta >= 0;
           return (
-            <GlassCard key={beast} delay={i * 0.03}>
+            <GlassCard key={beast} delay={i * 0.06}>
               {/* Beast name + description */}
               <div style={{ borderBottom: `2px solid ${color}44`, paddingBottom: 10, marginBottom: 10 }}>
                 <div style={{ fontSize: 16, fontFamily: 'var(--font-title)', fontWeight: 700, color, marginBottom: 3 }}>{beast}</div>
@@ -210,12 +210,8 @@ export default function ChaosBestiary() {
                 <div>
                   <div style={{ fontSize: 8, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>Avg CP</div>
                   <div style={{ fontSize: 14, fontFamily: 'monospace', fontWeight: 700, color }}>{formatCP(d.avgCP)}</div>
-                  <div style={{ fontSize: 9, color: above ? 'var(--jade-bright)' : 'var(--cinnabar-bright)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    {above
-                      ? <TrendingUp size={10} color="var(--jade-bright)" />
-                      : <TrendingDown size={10} color="var(--cinnabar-bright)" />
-                    }
-                    {above ? '+' : ''}{formatCP(Math.abs(d.cpDelta))} vs no chaos
+                  <div style={{ fontSize: 9, color: above ? 'var(--jade-bright)' : 'var(--cinnabar-bright)' }}>
+                    {above ? '▲ +' : '▼ '}{formatCP(Math.abs(d.cpDelta))} vs no chaos
                   </div>
                 </div>
               </div>
@@ -232,22 +228,12 @@ export default function ChaosBestiary() {
 
               {/* Top guilds */}
               <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 5, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Top Guilds</div>
-              {d.topGuilds.length > 0 ? d.topGuilds.map(([guild, count]) => {
-                const pct = d.count > 0 ? ((count / d.count) * 100).toFixed(0) : 0;
-                return (
-                  <div key={guild} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 4, alignItems: 'center', gap: 4 }}>
-                    <span style={{ color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minWidth: 0 }}>{guild}</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                      <span style={{
-                        fontSize: 8, padding: '1px 5px', borderRadius: 10,
-                        background: `${color}18`, color, border: `1px solid ${color}35`,
-                        fontFamily: 'monospace', fontWeight: 700,
-                      }}>{pct}%</span>
-                      <span style={{ color, fontFamily: 'monospace', fontWeight: 700, fontSize: 10 }}>{count}</span>
-                    </div>
-                  </div>
-                );
-              }) : (
+              {d.topGuilds.length > 0 ? d.topGuilds.map(([guild, count]) => (
+                <div key={guild} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, marginBottom: 3, alignItems: 'center' }}>
+                  <span style={{ color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 120 }}>{guild}</span>
+                  <span style={{ color, fontFamily: 'monospace', fontWeight: 700, flexShrink: 0, marginLeft: 4 }}>{count}</span>
+                </div>
+              )) : (
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>—</div>
               )}
             </GlassCard>
