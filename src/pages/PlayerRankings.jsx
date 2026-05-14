@@ -21,7 +21,7 @@ export default function PlayerRankings() {
   const [sortField, setSortField] = useState('cp');
   const [sortDir, setSortDir] = useState('desc');
   const [page, setPage] = useState(1);
-  const [perPage, setPerPage] = useState(30);
+  const [perPage, setPerPage] = useState(10);
 
   const PER_PAGE_OPTIONS = [10, 30, 50, 100];
 

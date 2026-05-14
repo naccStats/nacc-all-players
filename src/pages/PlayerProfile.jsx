@@ -253,24 +253,18 @@ export default function PlayerProfile() {
                     </span>
                   </div>
                   <div style={{ position: 'relative', height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 999 }}>
-                    {/* avg marker with tooltip-style label */}
+                    {/* avg tick mark — stays within bar bounds */}
                     <div style={{
-                      position: 'absolute', left: `${Math.min(avgPct, 96)}%`, top: -14,
-                      transform: 'translateX(-50%)', zIndex: 2,
-                      display: 'flex', flexDirection: 'column', alignItems: 'center',
+                      position: 'absolute',
+                      left: `${Math.min(avgPct, 97)}%`,
+                      top: -3, bottom: -3,
+                      width: 2,
+                      background: 'rgba(139,126,106,0.75)',
+                      transform: 'translateX(-50%)',
+                      borderRadius: 1,
+                      zIndex: 3,
                       pointerEvents: 'none',
-                    }}>
-                      <div style={{
-                        fontSize: 7, fontFamily: 'var(--font-title)', letterSpacing: '0.06em',
-                        color: 'rgba(139,126,106,0.85)', whiteSpace: 'nowrap',
-                        background: 'rgba(13,7,24,0.80)', padding: '1px 4px', borderRadius: 3,
-                        border: '1px solid rgba(139,126,106,0.25)',
-                        marginBottom: 2,
-                      }}>avg</div>
-                      <div style={{
-                        width: 1, height: 20, background: 'rgba(139,126,106,0.55)',
-                      }} />
-                    </div>
+                    }} />
                     <motion.div
                       style={{ position: 'absolute', left: 0, top: 0, height: '100%', background: color, borderRadius: 999 }}
                       initial={{ width: 0 }}
@@ -278,7 +272,8 @@ export default function PlayerProfile() {
                       transition={{ duration: 0.9, ease: 'easeOut' }}
                     />
                   </div>
-                  <div style={{ textAlign: 'right', marginTop: 3, fontSize: 9, color: 'var(--muted)' }}>
+                  <div style={{ textAlign: 'right', marginTop: 4, fontSize: 9, color: 'var(--muted)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                    <span style={{ display: 'inline-block', width: 8, height: 2, background: 'rgba(139,126,106,0.65)', borderRadius: 1, flexShrink: 0 }} />
                     realm avg {fmt(avg)}
                   </div>
                 </div>
