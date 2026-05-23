@@ -731,7 +731,7 @@ const ROLE_ORDER = ['Healer', 'Balanced', 'Fighter'];
 
 function getRole(totalHeal, totalBeast) {
   const ratio = totalHeal + totalBeast > 0 ? totalHeal / (totalHeal + totalBeast) : 0.5;
-  return ratio > 0.6 ? 'Healer' : ratio < 0.4 ? 'Fighter' : 'Balanced';
+  return ratio > 0.53 ? 'Healer' : ratio < 0.47 ? 'Fighter' : 'Balanced';
 }
 
 function healerFighterChart(rows, hlRole = null, w = 400) {
