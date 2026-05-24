@@ -8,7 +8,7 @@ import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { FilterSelect } from '../components/FilterBar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Crown, LayoutGrid, BarChart2, Circle, ZoomIn, ZoomOut } from 'lucide-react';
+import { Shield, Crown, LayoutGrid, BarChart2, Circle, ZoomIn, ZoomOut, ChevronDown, ChevronUp } from 'lucide-react';
 import 'echarts-gl';
 
 const TOOLTIP_BG = 'rgba(13,7,24,0.97)';
@@ -140,13 +140,33 @@ export default function GuildAnalytics() {
   const [zoom3D, setZoom3D] = useState(() => window.innerWidth < CHART_BREAKPOINTS.sm ? 53 : 69);
   const [hl3DGuild, setHl3DGuild] = useState('');   // highlighted guild name, '' = all
   const [hl3DTrib, setHl3DTrib]   = useState('');   // highlighted trib tier, '' = all
+  const [sortField, setSortField] = useState('totalCP');
+  const [sortDir, setSortDir]     = useState('desc');
 
   const guildStats = useMemo(() => computeGuildStats(rawPlayers || []), [rawPlayers]);
 
+  const SORT_OPTIONS = [
+    { value: 'totalCP',   label: 'Guild CP' },
+    { value: 'avgCP',     label: 'Avg Player CP' },
+    { value: 'avgFDU',    label: 'Avg FDU' },
+    { value: 'avgFDD',    label: 'Avg FDD' },
+    { value: 'avgFinals', label: 'Avg Finals' },
+  ];
+
   const filtered = useMemo(() => {
-    if (!search) return guildStats;
-    return guildStats.filter(g => g.name === search);
-  }, [guildStats, search]);
+    let list = search
+      ? guildStats.filter(g => g.name === search)
+      : [...guildStats];
+
+    // Apply sorting
+    list.sort((a, b) => {
+      let va = a[sortField] ?? 0;
+      let vb = b[sortField] ?? 0;
+      return sortDir === 'desc' ? vb - va : va - vb;
+    });
+
+    return list;
+  }, [guildStats, search, sortField, sortDir]);
 
   const totalCP = guildStats.reduce((s, g) => s + g.totalCP, 0);
 
@@ -246,6 +266,53 @@ export default function GuildAnalytics() {
           </div>
           <span style={{ fontSize: 10, color: 'var(--muted)', fontFamily: 'monospace' }}>{filtered.length} guilds</span>
         </div>
+
+        {/* Sort controls */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap',
+          paddingTop: 10, paddingBottom: 10,
+          borderBottom: '1px solid rgba(201,146,11,0.08)',
+        }}>
+          <span style={{
+            fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)',
+            letterSpacing: '0.14em', textTransform: 'uppercase', marginRight: 4, flexShrink: 0,
+          }}>Sort by</span>
+          {SORT_OPTIONS.map(opt => {
+            const active = sortField === opt.value;
+            return (
+              <button key={opt.value}
+                onClick={() => setSortField(opt.value)}
+                style={{
+                  padding: '4px 14px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
+                  fontFamily: 'var(--font-title)', letterSpacing: '0.08em',
+                  background: active ? 'rgba(201,146,11,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: active ? 'var(--gold-bright)' : 'var(--muted)',
+                  border: active ? '1px solid rgba(201,146,11,0.45)' : '1px solid rgba(255,255,255,0.06)',
+                  boxShadow: active ? '0 0 8px rgba(201,146,11,0.2)' : 'none',
+                  transition: 'all 0.15s',
+                }}
+              >{opt.label}</button>
+            );
+          })}
+          <button
+            onClick={() => setSortDir(d => d === 'desc' ? 'asc' : 'desc')}
+            style={{
+              marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
+              padding: '4px 14px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
+              fontFamily: 'var(--font-title)', letterSpacing: '0.08em',
+              background: 'rgba(176,38,255,0.08)',
+              color: 'var(--imperial-bright)',
+              border: '1px solid rgba(176,38,255,0.3)',
+              transition: 'all 0.15s',
+            }}
+          >
+            {sortDir === 'desc'
+              ? <><ChevronDown size={10} /> Desc</>
+              : <><ChevronUp   size={10} /> Asc</>
+            }
+          </button>
+        </div>
+
         {/* Scrollable inner grid */}
         <div style={{ maxHeight: 580, overflowY: 'auto', paddingRight: 4 }}
           className="max-h-[420px] md:max-h-[580px]">
