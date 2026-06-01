@@ -1,6 +1,7 @@
 import { useContext, useState, useMemo } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP, formatCPShort } from '../utils/formatters';
+import { TB, T, SL } from '../utils/chartDefaults';
 import { tribColor, tribRank, TRIB_PREFIXES } from '../utils/tribulationSystem';
 import { computeGuildStats } from '../utils/statsEngine';
 import { bp, rGrid, rLabel, rValueLabel, rNameText, CHART_BREAKPOINTS } from '../utils/chartResponsive';
@@ -9,12 +10,9 @@ import ChartContainer from '../components/ChartContainer';
 import { FilterSelect } from '../components/FilterBar';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Crown, LayoutGrid, BarChart2, Circle, ZoomIn, ZoomOut, ChevronDown, ChevronUp } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import 'echarts-gl';
 
-const TOOLTIP_BG = 'rgba(13,7,24,0.97)';
-const TOOLTIP_BORDER = 'rgba(212,168,67,0.32)';
-const CHART_TEXT = '#7D7263';
-const CHART_GRID_LINE = 'rgba(212,168,67,0.08)';
 
 const PALETTE = [
   '#D4A843', '#CB4335', '#9B59B6', '#2E9BE5', '#1EBD82',
@@ -41,8 +39,8 @@ function guildBarChart(guilds, w = 400, hlGuild = '') {
   return {
     tooltip: {
       trigger: 'axis',
-      backgroundColor: TOOLTIP_BG,
-      borderColor: TOOLTIP_BORDER,
+      backgroundColor: TB.bg,
+      borderColor: TB.bc,
       borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 11 },
       formatter: p => {
@@ -56,15 +54,15 @@ function guildBarChart(guilds, w = 400, hlGuild = '') {
     xAxis: {
       type: 'value',
       splitNumber: bp(w).sm ? 3 : 5,
-      axisLine: { lineStyle: { color: CHART_GRID_LINE } },
-      axisLabel: { ...rValueLabel(w), color: CHART_TEXT, formatter: v => formatCPShort(v), hideOverlap: true },
-      splitLine: { lineStyle: { color: CHART_GRID_LINE, type: 'dashed' } },
+      axisLine: { lineStyle: { color: SL.color } },
+      axisLabel: { ...rValueLabel(w), color: T.color, formatter: v => formatCPShort(v), hideOverlap: true },
+      splitLine: { lineStyle: { color: SL.color, type: 'dashed' } },
     },
     yAxis: {
       type: 'category',
       inverse: true,
       data: guilds.map(g => g.name),
-      axisLine: { lineStyle: { color: CHART_GRID_LINE } },
+      axisLine: { lineStyle: { color: SL.color } },
       axisLabel: { color: '#EDE0C4', ...rLabel(w, { width: pick(70, 100) }) },
     },
     series: [{
@@ -111,14 +109,14 @@ function guildPieChart(guilds, hlGuild = '') {
   return {
     tooltip: {
       trigger: 'item',
-      backgroundColor: TOOLTIP_BG, borderColor: TOOLTIP_BORDER, borderWidth: 1,
+      backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 11 },
       formatter: p => `<b style="color:${p.color}">${p.name}</b><br/>CP: ${formatCP(p.value)} (${p.percent.toFixed(3)}%)`,
     },
     legend: {
       orient: 'horizontal', bottom: 2, left: 'center', type: 'scroll',
-      textStyle: { color: CHART_TEXT, fontSize: 9 },
-      itemWidth: 8, itemHeight: 8, pageTextStyle: { color: CHART_TEXT },
+      textStyle: { color: T.color, fontSize: 9 },
+      itemWidth: 8, itemHeight: 8, pageTextStyle: { color: T.color },
     },
     series: [{
       type: 'pie', radius: ['32%', '62%'], center: ['50%', '44%'],
@@ -221,6 +219,12 @@ export default function GuildAnalytics() {
 
   return (
     <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      <PageHeader
+        title="Guilds"
+        subtitle="Guild strength & territorial dominance"
+        char="宗"
+        accent="var(--jade-bright)"
+      />
       <GlassCard>
         <div className="flex flex-col md:flex-row md:items-center gap-3">
           <FilterSelect
@@ -236,6 +240,162 @@ export default function GuildAnalytics() {
           <div style={{ fontSize: 11, color: 'var(--muted)' }}>
             {guildStats.length} guilds · {formatCP(totalCP)} total CP
           </div>
+        </div>
+      </GlassCard>
+
+      {/* ── 3D Territory Map — promoted ── */}
+      <GlassCard variant="gold">
+        <div className="flex items-center gap-2 mb-2">
+          <BarChart2 size={14} style={{ color: 'var(--azure-bright)' }} />
+          <h2 className="text-sm font-display font-bold gradient-text">Guild Territory Map — Tier × Players</h2>
+        </div>
+        <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 8 }}>Drag to rotate · Scroll/pinch to zoom · X = Guild · Y = Trib tier · Z = Player count</div>
+
+        {/* ── Highlight dropdowns ── */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 120px', minWidth: 0 }}>
+            <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.08em' }}>GUILD</span>
+            <select
+              value={hl3DGuild}
+              onChange={e => setHl3DGuild(e.target.value)}
+              style={{
+                background: 'rgba(0,0,0,0.35)',
+                border: `1px solid ${hl3DGuild ? 'rgba(212,168,67,0.5)' : 'rgba(212,168,67,0.18)'}`,
+                borderRadius: 7, color: hl3DGuild ? '#EDE0C4' : 'var(--muted)',
+                fontSize: 11, padding: '5px 8px', cursor: 'pointer', outline: 'none',
+                width: '100%', fontFamily: 'monospace',
+              }}
+            >
+              <option value="">All Guilds</option>
+              {top8.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 100px', minWidth: 0 }}>
+            <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.08em' }}>TRIB TIER</span>
+            <select
+              value={hl3DTrib}
+              onChange={e => setHl3DTrib(e.target.value)}
+              style={{
+                background: 'rgba(0,0,0,0.35)',
+                border: `1px solid ${hl3DTrib ? `${tribColor(hl3DTrib)}88` : 'rgba(212,168,67,0.18)'}`,
+                borderRadius: 7, color: hl3DTrib ? tribColor(hl3DTrib) || '#EDE0C4' : 'var(--muted)',
+                fontSize: 11, padding: '5px 8px', cursor: 'pointer', outline: 'none',
+                width: '100%', fontFamily: 'monospace',
+              }}
+            >
+              <option value="">All Tiers</option>
+              {activeTiers3D.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          {(hl3DGuild || hl3DTrib) && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, justifyContent: 'flex-end' }}>
+              <span style={{ fontSize: 9, color: 'transparent', fontFamily: 'var(--font-title)' }}>·</span>
+              <button
+                onClick={() => { setHl3DGuild(''); setHl3DTrib(''); }}
+                style={{
+                  background: 'rgba(201,146,11,0.08)', border: '1px solid rgba(201,146,11,0.25)',
+                  borderRadius: 7, color: 'var(--gold-bright)', fontSize: 10,
+                  padding: '5px 10px', cursor: 'pointer', whiteSpace: 'nowrap',
+                  fontFamily: 'var(--font-title)', letterSpacing: '0.05em',
+                }}
+              >Clear</button>
+            </div>
+          )}
+        </div>
+
+        <ChartContainer option={guild3DBarChart(guildStats, Math.round(GUILD3D_BASE_DIST - zoom3D * GUILD3D_ZOOM_SCALE), hl3DGuild || search, hl3DTrib)} type="3d" />
+
+        <AnimatePresence>
+          {hl3DInfo && (
+            <motion.div
+              key={`${hl3DGuild}|${hl3DTrib}`}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                marginTop: 10, padding: '10px 12px',
+                background: 'rgba(0,0,0,0.3)',
+                border: '1px solid rgba(201,146,11,0.15)',
+                borderRadius: 8,
+              }}
+            >
+              {hl3DInfo.mode === 'cell' && (
+                <>
+                  <div style={{ fontSize: 10, color: '#EDE0C4', fontWeight: 700, marginBottom: 6 }}>
+                    <span style={{ color: tribColor(hl3DInfo.tier) || 'var(--gold-pale)' }}>{hl3DInfo.tier}</span>
+                    <span style={{ color: 'var(--muted)', margin: '0 6px' }}>×</span>
+                    <span style={{ color: 'var(--gold-bright)' }}>{hl3DInfo.guildName}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
+                    {[
+                      { label: 'Players at tier', val: hl3DInfo.count, color: tribColor(hl3DInfo.tier) || 'var(--gold-pale)' },
+                      { label: 'Guild Total CP',  val: formatCP(hl3DInfo.totalCP), color: 'var(--gold-bright)' },
+                      { label: 'Guild Avg CP',    val: formatCP(hl3DInfo.avgCP),   color: 'var(--azure-bright)' },
+                    ].map(({ label, val, color }) => (
+                      <div key={label}>
+                        <div style={{ fontSize: 8, color: 'var(--muted)', marginBottom: 1 }}>{label}</div>
+                        <div style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color }}>{val}</div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {hl3DInfo.mode === 'guild' && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold-bright)', marginBottom: 6 }}>
+                    {hl3DInfo.guild.name} — Trib Breakdown
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {hl3DInfo.breakdown.map(({ tier, count }) => (
+                      <div key={tier} style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '3px 8px', borderRadius: 5,
+                        background: `${tribColor(tier)}18`,
+                        border: `1px solid ${tribColor(tier)}44`,
+                      }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: tribColor(tier) || '#EDE0C4' }}>{tier}</span>
+                        <span style={{ fontSize: 10, color: '#EDE0C4', fontFamily: 'monospace' }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              {hl3DInfo.mode === 'tier' && (
+                <>
+                  <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 6 }}>
+                    <span style={{ color: tribColor(hl3DInfo.tier) || 'var(--gold-pale)' }}>{hl3DInfo.tier}</span>
+                    <span style={{ color: 'var(--muted)', marginLeft: 6, fontWeight: 400 }}>— Players per guild</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {hl3DInfo.rows.map(({ name, count }) => (
+                      <div key={name} style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '3px 8px', borderRadius: 5,
+                        background: 'rgba(201,146,11,0.07)',
+                        border: '1px solid rgba(201,146,11,0.15)',
+                      }}>
+                        <span style={{ fontSize: 9, color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80, whiteSpace: 'nowrap' }}>{name}</span>
+                        <span style={{ fontSize: 10, color: tribColor(hl3DInfo.tier) || 'var(--gold-pale)', fontFamily: 'monospace', fontWeight: 700 }}>{count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(201,146,11,0.08)' }}>
+          <ZoomOut size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+          <input
+            type="range" min={1} max={100} step={1} value={zoom3D}
+            onChange={e => setZoom3D(Number(e.target.value))}
+            style={{ flex: 1, accentColor: 'var(--gold-bright)', cursor: 'pointer', height: 22, touchAction: 'none' }}
+          />
+          <ZoomIn size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
         </div>
       </GlassCard>
 
@@ -300,9 +460,9 @@ export default function GuildAnalytics() {
               marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
               padding: '4px 14px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
               fontFamily: 'var(--font-title)', letterSpacing: '0.08em',
-              background: 'rgba(176,38,255,0.08)',
-              color: 'var(--imperial-bright)',
-              border: '1px solid rgba(176,38,255,0.3)',
+              background: 'rgba(201,151,58,0.06)',
+              color: 'var(--gold-bright)',
+              border: '1px solid rgba(201,151,58,0.24)',
               transition: 'all 0.15s',
             }}
           >
@@ -362,7 +522,7 @@ export default function GuildAnalytics() {
               {/* Progress bar for share */}
               <div style={{ height: 3, background: 'rgba(255,255,255,0.05)', borderRadius: 999, marginBottom: 10, overflow: 'hidden' }}>
                 <motion.div
-                  style={{ height: '100%', borderRadius: 999, background: i < 3 ? 'linear-gradient(90deg, var(--gold-bright), var(--cinnabar-bright))' : 'linear-gradient(90deg, var(--azure-bright), var(--imperial-bright))' }}
+                  style={{ height: '100%', borderRadius: 999, background: i < 3 ? 'linear-gradient(90deg, var(--gold-bright), var(--cinnabar-bright))' : 'linear-gradient(90deg, var(--azure-bright), var(--jade-bright))' }}
                   initial={{ width: 0 }}
                   animate={{ width: `${Math.min(share * 4, 100)}%` }}
                   transition={{ duration: 0.8, delay: i * 0.03 }}
@@ -372,7 +532,7 @@ export default function GuildAnalytics() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, fontSize: 9 }}>
                 {[
                   { label: 'Avg CP',     val: formatCP(g.avgCP),           color: 'var(--azure-bright)' },
-                  { label: 'Chaos',      val: `${g.chaosCount} (${g.chaosRate != null ? (g.chaosRate * 100).toFixed(0) : 0}%)`, color: 'var(--imperial-bright)' },
+                  { label: 'Chaos',      val: `${g.chaosCount} (${g.chaosRate != null ? (g.chaosRate * 100).toFixed(0) : 0}%)`, color: 'var(--jade-bright)' },
                   { label: 'Avg FDU',    val: g.avgFDU != null ? g.avgFDU.toFixed(1) : '—', color: 'var(--jade-bright)' },
                   { label: 'Avg FDD',    val: g.avgFDD != null ? g.avgFDD.toFixed(1) : '—', color: 'var(--jade-bright)' },
                   { label: 'Avg Finals', val: g.avgFinals != null ? g.avgFinals.toFixed(1) : '—', color: 'var(--gold-bright)' },
@@ -413,7 +573,7 @@ export default function GuildAnalytics() {
         </div>
       </GlassCard>
 
-      {/* ── Treemap + Stacked Bar ── */}
+      {/* ── Treemap + Bubble ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <GlassCard variant="cyan">
           <div className="flex items-center gap-2 mb-2">
@@ -439,236 +599,76 @@ export default function GuildAnalytics() {
           })()}
         </GlassCard>
 
-        <GlassCard variant="purple">
+        {/* ── Bubble Chart ── */}
+        <GlassCard variant="gold">
           <div className="flex items-center gap-2 mb-2">
-            <BarChart2 size={14} style={{ color: 'var(--imperial-bright)' }} />
-            <h2 className="text-sm font-display font-bold gradient-text">Guild Territory Map — Tier × Players</h2>
+            <Circle size={14} style={{ color: 'var(--gold-bright)' }} />
+            <h2 className="text-sm font-display font-bold gradient-text-gold">Guild Power Profile — Avg CP vs Members</h2>
           </div>
-          <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 8 }}>Drag to rotate · Scroll/pinch to zoom · X = Guild · Y = Trib tier · Z = Player count</div>
-
-          {/* ── Highlight dropdowns ── */}
-          <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-            {/* Guild selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 120px', minWidth: 0 }}>
-              <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.08em' }}>GUILD</span>
-              <select
-                value={hl3DGuild}
-                onChange={e => setHl3DGuild(e.target.value)}
-                style={{
-                  background: 'rgba(0,0,0,0.35)',
-                  border: `1px solid ${hl3DGuild ? 'rgba(212,168,67,0.5)' : 'rgba(212,168,67,0.18)'}`,
-                  borderRadius: 7, color: hl3DGuild ? '#EDE0C4' : 'var(--muted)',
-                  fontSize: 11, padding: '5px 8px', cursor: 'pointer', outline: 'none',
-                  width: '100%', fontFamily: 'monospace',
-                }}
-              >
-                <option value="">All Guilds</option>
-                {top8.map(g => <option key={g.name} value={g.name}>{g.name}</option>)}
-              </select>
+          <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 8 }}>X = Avg CP · Y = Member count · Bubble size = Chaos rate · Hover a guild name to highlight</div>
+          <div className="flex flex-col md:flex-row gap-3">
+            {/* Chart */}
+            <div style={{ flex: '1 1 0', minWidth: 0 }}>
+              <ChartContainer option={(w) => {
+                const hlIdx = search ? guildStats.slice(0,15).findIndex(g => g.name === search) : -1;
+                return guildBubbleChart(guildStats, hoveredGuild, hlIdx >= 0 ? hlIdx : null, w);
+              }} type="bubble" />
             </div>
-
-            {/* Trib tier selector */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: '1 1 100px', minWidth: 0 }}>
-              <span style={{ fontSize: 9, color: 'var(--muted)', fontFamily: 'var(--font-title)', letterSpacing: '0.08em' }}>TRIB TIER</span>
-              <select
-                value={hl3DTrib}
-                onChange={e => setHl3DTrib(e.target.value)}
-                style={{
-                  background: 'rgba(0,0,0,0.35)',
-                  border: `1px solid ${hl3DTrib ? `${tribColor(hl3DTrib)}88` : 'rgba(212,168,67,0.18)'}`,
-                  borderRadius: 7, color: hl3DTrib ? tribColor(hl3DTrib) || '#EDE0C4' : 'var(--muted)',
-                  fontSize: 11, padding: '5px 8px', cursor: 'pointer', outline: 'none',
-                  width: '100%', fontFamily: 'monospace',
-                }}
-              >
-                <option value="">All Tiers</option>
-                {activeTiers3D.map(t => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </div>
-
-            {/* Clear button */}
-            {(hl3DGuild || hl3DTrib) && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, justifyContent: 'flex-end' }}>
-                <span style={{ fontSize: 9, color: 'transparent', fontFamily: 'var(--font-title)' }}>·</span>
-                <button
-                  onClick={() => { setHl3DGuild(''); setHl3DTrib(''); }}
-                  style={{
-                    background: 'rgba(201,146,11,0.08)', border: '1px solid rgba(201,146,11,0.25)',
-                    borderRadius: 7, color: 'var(--gold-bright)', fontSize: 10,
-                    padding: '5px 10px', cursor: 'pointer', whiteSpace: 'nowrap',
-                    fontFamily: 'var(--font-title)', letterSpacing: '0.05em',
-                  }}
-                >Clear</button>
+            {/* Scrollable guild legend */}
+            <div style={{
+              width: 'auto', flexShrink: 0,
+              background: 'rgba(13,7,24,0.55)',
+              border: '1px solid rgba(201,146,11,0.12)',
+              borderRadius: 10,
+              overflow: 'hidden',
+              display: 'flex', flexDirection: 'column',
+            }} className="w-full md:w-28">
+              <div style={{
+                padding: '5px 8px 4px',
+                borderBottom: '1px solid rgba(201,146,11,0.1)',
+                fontSize: 9, fontFamily: 'var(--font-title)', fontWeight: 700,
+                color: '#EDE0C4', letterSpacing: '0.05em',
+              }}>Guilds</div>
+              <div style={{ overflowY: 'auto', maxHeight: 320, padding: '2px 0' }}>
+                {guildStats.slice(0, BUBBLE_LIMIT).map((g, i) => {
+                  const isHovered = hoveredGuild === i;
+                  return (
+                    <div
+                      key={g.name}
+                      onMouseEnter={() => setHoveredGuild(i)}
+                      onMouseLeave={() => setHoveredGuild(null)}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        padding: '4px 8px',
+                        cursor: 'default',
+                        background: isHovered ? 'rgba(201,146,11,0.1)' : 'transparent',
+                        transition: 'background 0.15s',
+                      }}
+                    >
+                      <div style={{
+                        width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                        background: PALETTE[i % PALETTE.length],
+                        boxShadow: isHovered ? `0 0 6px ${PALETTE[i % PALETTE.length]}` : 'none',
+                        transition: 'box-shadow 0.15s',
+                      }} />
+                      <span style={{
+                        fontSize: 9, color: isHovered ? '#EDE0C4' : 'var(--muted)',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        fontWeight: isHovered ? 700 : 400,
+                        transition: 'color 0.15s',
+                      }}>{g.name}</span>
+                    </div>
+                  );
+                })}
               </div>
-            )}
-          </div>
-
-          <ChartContainer option={guild3DBarChart(guildStats, Math.round(GUILD3D_BASE_DIST - zoom3D * GUILD3D_ZOOM_SCALE), hl3DGuild || search, hl3DTrib)} type="3d" />
-
-          {/* ── Info panel ── */}
-          <AnimatePresence>
-            {hl3DInfo && (
-              <motion.div
-                key={`${hl3DGuild}|${hl3DTrib}`}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 4 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  marginTop: 10, padding: '10px 12px',
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(201,146,11,0.15)',
-                  borderRadius: 8,
-                }}
-              >
-                {hl3DInfo.mode === 'cell' && (
-                  <>
-                    <div style={{ fontSize: 10, color: '#EDE0C4', fontWeight: 700, marginBottom: 6 }}>
-                      <span style={{ color: tribColor(hl3DInfo.tier) || 'var(--imperial-bright)' }}>{hl3DInfo.tier}</span>
-                      <span style={{ color: 'var(--muted)', margin: '0 6px' }}>×</span>
-                      <span style={{ color: 'var(--gold-bright)' }}>{hl3DInfo.guildName}</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap' }}>
-                      {[
-                        { label: 'Players at tier', val: hl3DInfo.count, color: tribColor(hl3DInfo.tier) || 'var(--imperial-bright)' },
-                        { label: 'Guild Total CP',  val: formatCP(hl3DInfo.totalCP), color: 'var(--gold-bright)' },
-                        { label: 'Guild Avg CP',    val: formatCP(hl3DInfo.avgCP),   color: 'var(--azure-bright)' },
-                      ].map(({ label, val, color }) => (
-                        <div key={label}>
-                          <div style={{ fontSize: 8, color: 'var(--muted)', marginBottom: 1 }}>{label}</div>
-                          <div style={{ fontSize: 13, fontFamily: 'monospace', fontWeight: 700, color }}>{val}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {hl3DInfo.mode === 'guild' && (
-                  <>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--gold-bright)', marginBottom: 6 }}>
-                      {hl3DInfo.guild.name} — Trib Breakdown
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {hl3DInfo.breakdown.map(({ tier, count }) => (
-                        <div key={tier} style={{
-                          display: 'flex', alignItems: 'center', gap: 5,
-                          padding: '3px 8px', borderRadius: 5,
-                          background: `${tribColor(tier)}18`,
-                          border: `1px solid ${tribColor(tier)}44`,
-                        }}>
-                          <span style={{ fontSize: 10, fontWeight: 700, color: tribColor(tier) || '#EDE0C4' }}>{tier}</span>
-                          <span style={{ fontSize: 10, color: '#EDE0C4', fontFamily: 'monospace' }}>{count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {hl3DInfo.mode === 'tier' && (
-                  <>
-                    <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 6 }}>
-                      <span style={{ color: tribColor(hl3DInfo.tier) || 'var(--imperial-bright)' }}>{hl3DInfo.tier}</span>
-                      <span style={{ color: 'var(--muted)', marginLeft: 6, fontWeight: 400 }}>— Players per guild</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      {hl3DInfo.rows.map(({ name, count }) => (
-                        <div key={name} style={{
-                          display: 'flex', alignItems: 'center', gap: 5,
-                          padding: '3px 8px', borderRadius: 5,
-                          background: 'rgba(201,146,11,0.07)',
-                          border: '1px solid rgba(201,146,11,0.15)',
-                        }}>
-                          <span style={{ fontSize: 9, color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 80, whiteSpace: 'nowrap' }}>{name}</span>
-                          <span style={{ fontSize: 10, color: tribColor(hl3DInfo.tier) || 'var(--imperial-bright)', fontFamily: 'monospace', fontWeight: 700 }}>{count}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(201,146,11,0.08)' }}>
-            <ZoomOut size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
-            <input
-              type="range" min={1} max={100} step={1} value={zoom3D}
-              onChange={e => setZoom3D(Number(e.target.value))}
-              style={{ flex: 1, accentColor: 'var(--gold-bright)', cursor: 'pointer', height: 22, touchAction: 'none' }}
-            />
-            <ZoomIn size={12} style={{ color: 'var(--muted)', flexShrink: 0 }} />
+            </div>
           </div>
         </GlassCard>
       </div>
-
-      {/* ── Bubble Chart ── */}
-      <GlassCard variant="gold">
-        <div className="flex items-center gap-2 mb-2">
-          <Circle size={14} style={{ color: 'var(--gold-bright)' }} />
-          <h2 className="text-sm font-display font-bold gradient-text-gold">Guild Power Profile — Avg CP vs Members</h2>
-        </div>
-        <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 8 }}>X = Avg CP · Y = Member count · Bubble size = Chaos rate · Hover a guild name to highlight</div>
-        <div className="flex flex-col md:flex-row gap-3">
-          {/* Chart */}
-          <div style={{ flex: '1 1 0', minWidth: 0 }}>
-            <ChartContainer option={(w) => {
-              const hlIdx = search ? guildStats.slice(0,15).findIndex(g => g.name === search) : -1;
-              return guildBubbleChart(guildStats, hoveredGuild, hlIdx >= 0 ? hlIdx : null, w);
-            }} type="bubble" />
-          </div>
-          {/* Scrollable guild legend */}
-          <div style={{
-            width: 'auto', flexShrink: 0,
-            background: 'rgba(13,7,24,0.55)',
-            border: '1px solid rgba(201,146,11,0.12)',
-            borderRadius: 10,
-            overflow: 'hidden',
-            display: 'flex', flexDirection: 'column',
-          }} className="w-full md:w-28">
-            <div style={{
-              padding: '5px 8px 4px',
-              borderBottom: '1px solid rgba(201,146,11,0.1)',
-              fontSize: 9, fontFamily: 'var(--font-title)', fontWeight: 700,
-              color: '#EDE0C4', letterSpacing: '0.05em',
-            }}>Guilds</div>
-            <div style={{ overflowY: 'auto', maxHeight: 320, padding: '2px 0' }}>
-              {guildStats.slice(0, BUBBLE_LIMIT).map((g, i) => {
-                const isHovered = hoveredGuild === i;
-                return (
-                  <div
-                    key={g.name}
-                    onMouseEnter={() => setHoveredGuild(i)}
-                    onMouseLeave={() => setHoveredGuild(null)}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 5,
-                      padding: '4px 8px',
-                      cursor: 'default',
-                      background: isHovered ? 'rgba(201,146,11,0.1)' : 'transparent',
-                      transition: 'background 0.15s',
-                    }}
-                  >
-                    <div style={{
-                      width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                      background: PALETTE[i % PALETTE.length],
-                      boxShadow: isHovered ? `0 0 6px ${PALETTE[i % PALETTE.length]}` : 'none',
-                      transition: 'box-shadow 0.15s',
-                    }} />
-                    <span style={{
-                      fontSize: 9, color: isHovered ? '#EDE0C4' : 'var(--muted)',
-                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      fontWeight: isHovered ? 700 : 400,
-                      transition: 'color 0.15s',
-                    }}>{g.name}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </GlassCard>
     </motion.div>
   );
 }
+
 
 /* ─── Treemap chart ─────────────────────────────────────────────────────── */
 function guildTreemapChart(guilds, hlGuild = '') {
@@ -769,7 +769,7 @@ function guild3DBarChart(guilds, distance = 180, hlGuild = '', hlTrib = '') {
   return {
     tooltip: {
       trigger: 'item', triggerOn: 'mousemove|click',
-      backgroundColor: TOOLTIP_BG, borderColor: TOOLTIP_BORDER, borderWidth: 1,
+      backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
       textStyle: { color: '#EDE0C4', fontSize: 10 },
       formatter: p => {
         const guild = top8[p.value[0]]?.name || '';
@@ -784,8 +784,8 @@ function guild3DBarChart(guilds, distance = 180, hlGuild = '', hlTrib = '') {
       environment: 'rgba(0,0,0,0)',
       light: { main: { intensity: hasHighlight ? 1.6 : 1.1, shadow: false }, ambient: { intensity: hasHighlight ? 0.5 : 0.35 } },
       postEffect: {
-        enable: !!hasHighlight,
-        bloom: { enable: !!hasHighlight, bloomIntensity: 0.6 },
+        enable: false,
+        bloom: { enable: false },
       },
       axisLine:    { lineStyle: { color: 'rgba(201,146,11,0.22)' } },
       splitLine:   { lineStyle: { color: 'rgba(201,146,11,0.06)' } },
@@ -793,20 +793,20 @@ function guild3DBarChart(guilds, distance = 180, hlGuild = '', hlTrib = '') {
     },
     xAxis3D: {
       type: 'category', data: top8.map(g => truncate(g.name)), name: 'Guild',
-      nameTextStyle: { color: CHART_TEXT, fontSize: 9 },
+      nameTextStyle: { color: T.color, fontSize: 9 },
       axisLabel: { color: '#EDE0C4', fontSize: isMobile ? 6 : 7, interval: 0 },
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
     },
     yAxis3D: {
       type: 'category', data: activeTiers, name: 'Tier',
-      nameTextStyle: { color: CHART_TEXT, fontSize: 9 },
+      nameTextStyle: { color: T.color, fontSize: 9 },
       axisLabel: { color: '#EDE0C4', fontSize: isMobile ? 7 : 8 },
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
     },
     zAxis3D: {
       type: 'value', name: 'Players',
-      nameTextStyle: { color: CHART_TEXT, fontSize: 9 },
-      axisLabel: { color: CHART_TEXT, fontSize: isMobile ? 7 : 8 },
+      nameTextStyle: { color: T.color, fontSize: 9 },
+      axisLabel: { color: T.color, fontSize: isMobile ? 7 : 8 },
       axisLine: { lineStyle: { color: 'rgba(201,146,11,0.2)' } },
       splitLine: { lineStyle: { color: 'rgba(201,146,11,0.06)' } },
     },

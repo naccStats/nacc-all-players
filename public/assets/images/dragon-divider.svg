@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 40">
+  <!-- Left flourish -->
+  <path d="M0 20 Q40 5 80 20 Q120 35 160 20 Q180 12 200 20" fill="none" stroke="rgba(212,168,67,0.55)" stroke-width="1" stroke-linecap="round"/>
+  <!-- Left diamond -->
+  <polygon points="210,20 218,13 226,20 218,27" fill="rgba(212,168,67,0.5)"/>
+  <!-- Left line -->
+  <line x1="232" y1="20" x2="310" y2="20" stroke="rgba(212,168,67,0.4)" stroke-width="0.75"/>
+  <!-- Center circle -->
+  <circle cx="340" cy="20" r="10" fill="none" stroke="rgba(212,168,67,0.55)" stroke-width="1"/>
+  <circle cx="340" cy="20" r="5"  fill="none" stroke="rgba(212,168,67,0.4)"  stroke-width="0.5" stroke-dasharray="3 2"/>
+  <circle cx="340" cy="20" r="2"  fill="rgba(212,168,67,0.65)"/>
+  <!-- Center text marker -->
+  <text x="400" y="24" text-anchor="middle" font-size="12" font-family="serif" fill="rgba(212,168,67,0.6)">✦</text>
+  <!-- Mirror right -->
+  <circle cx="460" cy="20" r="10" fill="none" stroke="rgba(212,168,67,0.55)" stroke-width="1"/>
+  <circle cx="460" cy="20" r="5"  fill="none" stroke="rgba(212,168,67,0.4)"  stroke-width="0.5" stroke-dasharray="3 2"/>
+  <circle cx="460" cy="20" r="2"  fill="rgba(212,168,67,0.65)"/>
+  <line x1="476" y1="20" x2="556" y2="20" stroke="rgba(212,168,67,0.4)" stroke-width="0.75"/>
+  <polygon points="562,20 570,13 578,20 570,27" fill="rgba(212,168,67,0.5)"/>
+  <path d="M584 20 Q600 12 616 20 Q632 28 648 20 Q680 5 720 20 Q740 30 760 20 Q780 12 800 20" fill="none" stroke="rgba(212,168,67,0.55)" stroke-width="1" stroke-linecap="round"/>
+</svg>

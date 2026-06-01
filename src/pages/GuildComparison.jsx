@@ -1,6 +1,7 @@
 import { useContext, useMemo, useState } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
+import { TB } from '../utils/chartDefaults';
 import { tribColor, TRIB_PREFIXES } from '../utils/tribulationSystem';
 import { computeGuildStats } from '../utils/statsEngine';
 import { bp, rGrid, rValueLabel } from '../utils/chartResponsive';
@@ -9,8 +10,8 @@ import ChartContainer from '../components/ChartContainer';
 import { FilterSelect } from '../components/FilterBar';
 import { motion } from 'framer-motion';
 import { Swords, Shield } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 
-const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
 const CT = '#8B7E6A';
 const COLOR_A = '#2E9BE5';
 const COLOR_B = '#CB4335';
@@ -129,6 +130,12 @@ export default function GuildComparison() {
 
   return (
     <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      <PageHeader
+        title="Guild Compare"
+        subtitle="Side-by-side guild comparison & power analysis"
+        char="战"
+        accent="var(--jade-bright)"
+      />
 
       {/* Guild selectors */}
       <GlassCard>

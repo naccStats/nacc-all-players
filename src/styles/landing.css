@@ -1,0 +1,264 @@
+/* =============================================
+   LANDING PAGE — Scroll Unfurl
+============================================= */
+.landing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: #060402;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* ── Mountain ink-wash background ── */
+.landing-mountain-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+  animation: mist-shift 32s ease-in-out infinite;
+}
+
+.landing-mountain-bg svg {
+  width: 100%;
+  height: auto;
+  min-height: 260px;
+}
+
+/* ── Ambient mist layer ── */
+.landing-mist {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 40% at 50% 65%,
+      rgba(201,151,58,0.04) 0%,
+      transparent 70%
+    );
+  animation: mist-breathe 9s ease-in-out infinite;
+}
+
+/* ── Scroll rollers (vertical bars left and right edge) ── */
+.landing-roller {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: clamp(14px, 2vw, 22px);
+  background: linear-gradient(180deg,
+    rgba(201,151,58,0.12) 0%,
+    rgba(201,151,58,0.22) 20%,
+    rgba(201,151,58,0.28) 50%,
+    rgba(201,151,58,0.22) 80%,
+    rgba(201,151,58,0.12) 100%
+  );
+  border: 1px solid rgba(201,151,58,0.22);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.landing-roller--left  { left: 0; }
+.landing-roller--right { right: 0; }
+
+/* ── Scroll parchment — faint warm fill behind content ── */
+.landing-scroll-bg {
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 5%;
+  right: 5%;
+  background: linear-gradient(180deg,
+    rgba(201,151,58,0.025) 0%,
+    rgba(201,151,58,0.040) 30%,
+    rgba(201,151,58,0.055) 50%,
+    rgba(201,151,58,0.040) 70%,
+    rgba(201,151,58,0.025) 100%
+  );
+  border-top: 1px solid rgba(201,151,58,0.12);
+  border-bottom: 1px solid rgba(201,151,58,0.12);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Centre content wrapper ── */
+.landing-center {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(20px, 3.5vh, 36px);
+  text-align: center;
+  padding: 0 24px;
+}
+
+/* ── Seal stamp ── */
+.landing-seal {
+  position: relative;
+  width: clamp(140px, 22vw, 200px);
+  height: clamp(140px, 22vw, 200px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.landing-seal--lit {
+  animation: seal-breathe 3.5s ease-in-out infinite;
+}
+
+@keyframes seal-breathe {
+  0%, 100% { box-shadow: 0 0 18px rgba(179,58,42,0.18), 0 0 40px rgba(179,58,42,0.06); }
+  50%       { box-shadow: 0 0 32px rgba(179,58,42,0.34), 0 0 70px rgba(179,58,42,0.14); }
+}
+
+/* Outer cinnabar border frame */
+.landing-seal-border {
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(179,58,42,0.72);
+  box-shadow:
+    0 0 0 5px rgba(179,58,42,0.06),
+    0 0 32px rgba(179,58,42,0.18),
+    inset 0 0 20px rgba(0,0,0,0.55);
+}
+
+/* Inner double border */
+.landing-seal-border::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(179,58,42,0.30);
+}
+
+/* NACC in Cinzel — the primary visual moment */
+.landing-seal-char {
+  font-family: var(--font-title);
+  font-size: clamp(34px, 6vw, 56px);
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: var(--bright);
+  text-shadow:
+    0 0 30px rgba(201,151,58,0.55),
+    0 0 60px rgba(201,151,58,0.20);
+  position: relative;
+  z-index: 1;
+  user-select: none;
+}
+
+/* Corner ornament dots */
+.landing-seal-ornament {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+}
+
+.landing-seal-ornament::before,
+.landing-seal-ornament::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(179,58,42,0.55);
+  box-shadow: 0 0 6px rgba(179,58,42,0.40);
+}
+.landing-seal-ornament::before {
+  top: 0; left: 0;
+  box-shadow: 0 0 6px rgba(179,58,42,0.40),
+    calc(100% - 4px + 12px + 12px) 0 0 rgba(179,58,42,0.55);
+}
+.landing-seal-ornament::after {
+  bottom: 0; left: 0;
+  box-shadow: 0 0 6px rgba(179,58,42,0.40),
+    calc(100% - 4px + 12px + 12px) 0 0 rgba(179,58,42,0.55);
+}
+
+/* ── Tagline block ── */
+.landing-tagline-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.landing-subtitle {
+  font-family: var(--font-title);
+  font-size: clamp(9px, 1.4vw, 12px);
+  color: rgba(232,217,184,0.70);
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.landing-tagline {
+  font-family: var(--font-deco);
+  font-size: clamp(14px, 2.2vw, 20px);
+  color: rgba(179,58,42,0.62);
+  letter-spacing: 0.14em;
+  margin: 0;
+}
+
+/* ── Enter button ── */
+.landing-enter-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-title);
+  font-size: clamp(9px, 1.3vw, 11px);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(201,151,58,0.88);
+  background: transparent;
+  border: 1px solid rgba(201,151,58,0.32);
+  padding: clamp(11px, 1.8vh, 15px) clamp(32px, 5vw, 54px);
+  cursor: pointer;
+  position: relative;
+  transition: color 0.22s, border-color 0.22s, box-shadow 0.22s, background 0.22s;
+  box-shadow: none;
+}
+
+.landing-enter-btn::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid rgba(201,151,58,0.08);
+  pointer-events: none;
+}
+
+.landing-enter-btn:hover:not(:disabled) {
+  color: var(--bright);
+  border-color: rgba(201,151,58,0.68);
+  background: rgba(201,151,58,0.05);
+  box-shadow: 0 0 24px rgba(201,151,58,0.16);
+}
+
+.landing-enter-btn:disabled { cursor: default; }
+
+/* ── Bottom quote ── */
+.landing-quote {
+  font-family: var(--font-title);
+  font-size: clamp(8px, 1.1vw, 10px);
+  color: rgba(232,217,184,0.18);
+  letter-spacing: 0.14em;
+  font-style: italic;
+  margin: 0;
+  max-width: 380px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 767px) {
+  .landing-seal {
+    width: clamp(120px, 42vw, 170px);
+    height: clamp(120px, 42vw, 170px);
+  }
+  .landing-scroll-bg { left: 0; right: 0; top: 5%; bottom: 5%; }
+  .landing-center { gap: clamp(16px, 3vh, 24px); }
+}
+
+@media (max-height: 600px) {
+  .landing-quote { display: none; }
+  .landing-center { gap: 14px; }
+}

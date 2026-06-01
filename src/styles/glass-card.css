@@ -1,0 +1,238 @@
+/* =============================================
+   GLASS CARD — Editorial
+============================================= */
+.glass-card {
+  background: rgba(14, 9, 4, 0.94);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  box-shadow:
+    0 6px 28px -6px rgba(0,0,0,0.70),
+    0 1px 0 rgba(255,255,255,0.03) inset;
+  position: relative;
+  overflow: hidden;
+  will-change: transform;
+  transition:
+    transform 0.26s cubic-bezier(0.4,0,0.2,1),
+    box-shadow 0.26s cubic-bezier(0.4,0,0.2,1),
+    border-color 0.26s cubic-bezier(0.4,0,0.2,1);
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 14px 42px -8px rgba(0,0,0,0.75),
+    0 0 0 1px rgba(201,151,58,0.16),
+    0 1px 0 rgba(255,255,255,0.04) inset;
+  border-color: var(--border-hover);
+}
+
+/* Per-variant glow color for accent bar */
+.glass-card          { --bar-glow: rgba(201,151,58,0.60); }
+.glass-card--gold    { --bar-glow: rgba(201,151,58,0.80); }
+.glass-card--cyan    { --bar-glow: rgba(40,130,200,0.70); }
+.glass-card--red     { --bar-glow: rgba(179,58,42,0.70); }
+.glass-card--jade    { --bar-glow: rgba(25,168,112,0.70); }
+
+/* Editorial left accent bar */
+.glass-accent-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 3px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  opacity: 0.70;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.26s, box-shadow 0.26s;
+}
+
+.glass-card:hover .glass-accent-bar {
+  opacity: 1;
+  box-shadow: 0 0 10px var(--bar-glow);
+}
+
+/* Shimmer sweep on hover */
+.glass-shimmer {
+  position: absolute;
+  top: 0;
+  left: -80%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.030) 50%, transparent 100%);
+  transform: skewX(-16deg);
+  transition: left 0.52s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glass-card:hover .glass-shimmer {
+  left: 130%;
+}
+
+/* Variants — border and subtle bg tint */
+.glass-card--cyan   { border-color: rgba(40,130,200,0.24); }
+.glass-card--cyan:hover {
+  box-shadow: 0 14px 42px -8px rgba(0,0,0,0.75), 0 0 0 1px rgba(40,130,200,0.28),
+    0 1px 0 rgba(255,255,255,0.04) inset;
+}
+
+
+.glass-card--gold   { border-color: rgba(201,151,58,0.32); }
+.glass-card--gold:hover {
+  box-shadow: 0 14px 42px -8px rgba(0,0,0,0.75), 0 0 0 1px rgba(201,151,58,0.36),
+    0 1px 0 rgba(255,255,255,0.04) inset;
+}
+
+.glass-card--red    { border-color: rgba(179,58,42,0.24); }
+.glass-card--red:hover {
+  box-shadow: 0 14px 42px -8px rgba(0,0,0,0.75), 0 0 0 1px rgba(179,58,42,0.28),
+    0 1px 0 rgba(255,255,255,0.04) inset;
+}
+
+.glass-card--jade   { border-color: rgba(25,168,112,0.24); }
+.glass-card--jade:hover {
+  box-shadow: 0 14px 42px -8px rgba(0,0,0,0.75), 0 0 0 1px rgba(25,168,112,0.28),
+    0 1px 0 rgba(255,255,255,0.04) inset;
+}
+
+/* =============================================
+   GRADIENT TEXT
+============================================= */
+.gradient-text {
+  background: linear-gradient(90deg, var(--gold-bright), var(--cinnabar-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(90deg, var(--gold-bright), var(--cinnabar-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-jade {
+  background: linear-gradient(90deg, var(--jade-bright), var(--azure-bright));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-premium {
+  background: linear-gradient(135deg, #F0E0A0 0%, #C9973A 45%, #B33A2A 85%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.shimmer-text {
+  background: var(--gold-shimmer);
+  background-size: 250% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient-shimmer 6s linear infinite;
+}
+
+/* =============================================
+   STAT CARD
+============================================= */
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  padding: 18px 20px 16px !important;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stat-icon-halo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  opacity: 0.85;
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.stat-label {
+  color: var(--muted);
+  font-family: var(--font-title);
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.stat-value {
+  font-family: var(--font-title);
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 700;
+  color: var(--bright-soft);
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stat-sub {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.05em;
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* =============================================
+   CHART GLASS CARD — top accent line
+============================================= */
+.glass-card--chart::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(201,151,58,0.22) 8%,
+    rgba(201,151,58,0.72) 38%,
+    rgba(179,58,42,0.55) 50%,
+    rgba(201,151,58,0.72) 62%,
+    rgba(201,151,58,0.22) 92%,
+    transparent 100%
+  );
+  border-radius: var(--radius) var(--radius) 0 0;
+  opacity: 0.80;
+  border: none;
+  width: auto;
+}

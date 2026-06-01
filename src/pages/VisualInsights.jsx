@@ -2,15 +2,16 @@ import { useContext, useMemo, useState, useEffect, useRef, useCallback } from 'r
 import ReactDOM from 'react-dom';
 import Papa from 'papaparse';
 import { PlayerContext } from '../App';
-import { formatCP } from '../utils/formatters';
+import { formatCP, normalizeGuild } from '../utils/formatters';
+import { TB } from '../utils/chartDefaults';
 import { tribColor, tribLabel } from '../utils/tribulationSystem';
 import { bp, rGrid, rLabel, rValueLabel, rNameText } from '../utils/chartResponsive';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Radar, Flame, Users, Zap, ScatterChart, BarChart2 } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 
-const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
 const SL = { color: 'rgba(201,146,11,0.08)', type: 'dashed' };
 
 /* Named limits */
@@ -71,7 +72,7 @@ export default function VisualInsights() {
       const n = k => num(row, k);
       return {
         name: (row.Player || '').toString().trim(),
-        guild: (row.Guild || '').toString().trim(),
+        guild: normalizeGuild(row.Guild),
         trib: (row.Tribulation || '').toString().trim(),
         hasChaos: (row['Has Chaos'] || '').toString().trim(),
         raw: {
@@ -108,7 +109,7 @@ export default function VisualInsights() {
       .sort((a, b) => num(b, 'Total Finals') - num(a, 'Total Finals'))
       .map(row => ({
         player:     (row.Player || '').toString().trim(),
-        guild:      (row.Guild  || '').toString().trim(),
+        guild:      (() => { const g = (row.Guild || '').toString().trim(); return g.toLowerCase() === 'noguild' ? '' : g; })(),
         trib:       (row.Tribulation || '').toString().trim(),
         hasChaos:   (row['Has Chaos'] || '').toString().trim(),
         cp:         num(row, 'CP'),
@@ -131,7 +132,8 @@ export default function VisualInsights() {
     // Guild avg CP top 10
     const guildMap = {};
     for (const p of players) {
-      const g = p.guild || 'NoGuild';
+      if (!p.guild) continue;
+      const g = p.guild;
       if (!guildMap[g]) guildMap[g] = [];
       guildMap[g].push(p.cp || 0);
     }
@@ -145,6 +147,12 @@ export default function VisualInsights() {
 
   return (
     <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      <PageHeader
+        title="Visual Insights"
+        subtitle="Combat attribute radar & cultivation leaderboards"
+        char="悟"
+        accent="var(--azure-bright)"
+      />
       {/* SVG Radar */}
       <GlassCard variant="cyan">
         <div className="flex items-center gap-2 mb-3">
@@ -169,10 +177,9 @@ export default function VisualInsights() {
               const tc = tribColor(p.trib);
               const hasC = p.hasChaos && p.hasChaos !== 'N' && p.hasChaos !== 'NO' && p.hasChaos !== '';
               return (
-                <div key={i} style={{
-                  background: 'rgba(255,255,255,0.03)',
+                <div key={i} className="cultivator-row" style={{
                   border: '1px solid rgba(201,146,11,0.12)',
-                  borderRadius: 8, padding: '8px 10px',
+                  padding: '8px 10px',
                 }}>
                   {/* Row 1: rank + name + trib + chaos */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
@@ -235,16 +242,18 @@ export default function VisualInsights() {
             const pct = (p.cp / maxCP) * 100;
             const barColor = i === 0
               ? 'linear-gradient(90deg, #D4A843, #CB4335)'
-              : i < 3
-              ? 'linear-gradient(90deg, #2E9BE5, #9B59B6)'
+              : i === 1
+              ? 'linear-gradient(90deg, #B33A2A, #D4813A)'
+              : i === 2
+              ? 'linear-gradient(90deg, #19A870, #2882C8)'
               : 'linear-gradient(90deg, rgba(0,191,255,0.3), rgba(0,191,255,0.08))';
             return (
               <div key={p.uid} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <div style={{
                   width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 9, fontWeight: 700, fontFamily: 'var(--font-title)', flexShrink: 0,
-                  background: i === 0 ? 'rgba(201,146,11,0.2)' : i < 3 ? 'rgba(0,191,255,0.1)' : 'rgba(0,0,0,0.3)',
-                  color: i === 0 ? 'var(--gold-bright)' : i < 3 ? 'var(--azure-bright)' : 'var(--muted)',
+                  background: i === 0 ? 'rgba(201,146,11,0.2)' : i === 1 ? 'rgba(179,58,42,0.2)' : i === 2 ? 'rgba(25,168,112,0.2)' : 'rgba(0,0,0,0.3)',
+                  color: i === 0 ? 'var(--gold-bright)' : i === 1 ? 'var(--cinnabar-bright)' : i === 2 ? 'var(--jade-bright)' : 'var(--muted)',
                   border: i < 3 ? '1px solid rgba(201,146,11,0.3)' : '1px solid rgba(255,255,255,0.04)',
                 }}>{i + 1}</div>
                 <div style={{ width: 120, fontSize: 10, color: '#EDE0C4', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 0 }}>
@@ -384,6 +393,7 @@ export default function VisualInsights() {
             })()}
           </GlassCard>
         </div>
+
       )}
     </motion.div>
   );
@@ -437,7 +447,7 @@ function SvgRadar({ data }) {
   const updateSize = useCallback(() => {
     if (wrapRef.current) {
       // Cap at 520px so it doesn't become enormous on wide screens
-      setSize(Math.min(wrapRef.current.offsetWidth, 380));
+      setSize(Math.min(wrapRef.current.offsetWidth, 650));
     }
   }, []);
 
@@ -797,3 +807,4 @@ function healerFighterChart(rows, hlRole = null, w = 400) {
     }),
   };
 }
+

@@ -1,0 +1,298 @@
+/* =============================================
+   SIDEBAR — collapsible
+============================================= */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  background: linear-gradient(180deg, #0A0700 0%, #060402 100%);
+  border-right: 1px solid rgba(201,151,58,0.10);
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  transition: width 0.35s cubic-bezier(0.4,0,0.2,1), min-width 0.35s cubic-bezier(0.4,0,0.2,1);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+/* Collapsed desktop state */
+.sidebar.sidebar--collapsed {
+  width: var(--sidebar-collapsed-w);
+  min-width: var(--sidebar-collapsed-w);
+}
+
+/* Top decorative bar — single gold line */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-bright), var(--cinnabar-bright), var(--gold-bright), transparent);
+  opacity: 0.6;
+}
+
+.sidebar-brand {
+  padding: 0 16px 18px;
+  border-bottom: 1px solid rgba(201,151,58,0.10);
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* Subtle glow blob — no animation */
+.sidebar-brand-glow {
+  position: absolute;
+  top: -16px;
+  left: -16px;
+  width: 180px;
+  height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(201,151,58,0.10) 0%, transparent 70%);
+  pointer-events: none;
+  filter: blur(18px);
+}
+
+.sidebar-brand h1 {
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--bright-soft);
+  text-shadow: 0 0 16px rgba(201,151,58,0.40);
+  transition: opacity 0.2s;
+}
+
+.sidebar-brand .brand-sub {
+  font-size: 8px;
+  letter-spacing: 0.24em;
+  color: var(--muted);
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+
+.sidebar-brand .brand-deco {
+  font-family: var(--font-deco);
+  font-size: 12px;
+  color: var(--cinnabar-bright);
+  opacity: 0.65;
+  transition: opacity 0.2s;
+}
+
+/* Hide text when collapsed */
+.sidebar.sidebar--collapsed .sidebar-brand h1,
+.sidebar.sidebar--collapsed .sidebar-brand .brand-sub,
+.sidebar.sidebar--collapsed .sidebar-brand .brand-deco {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 12px 10px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  transition: color 0.20s ease, background 0.20s ease, border-color 0.20s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  border: 1px solid transparent;
+}
+
+/* Slide-in background on hover */
+.nav-item .nav-slide {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(201,151,58,0.08) 0%, rgba(201,151,58,0.02) 100%);
+  transform: translateX(-100%);
+  transition: transform 0.22s cubic-bezier(0.4,0,0.2,1);
+  border-radius: var(--radius-sm);
+  z-index: 0;
+}
+
+.nav-item:hover .nav-slide {
+  transform: translateX(0);
+}
+
+.nav-item > * {
+  position: relative;
+  z-index: 1;
+}
+
+.nav-item:hover {
+  color: var(--bright-soft);
+  border-color: rgba(201,151,58,0.14);
+}
+
+.nav-item.active {
+  color: var(--bright-soft);
+  background: linear-gradient(90deg, rgba(201,151,58,0.10), rgba(201,151,58,0.03));
+  border-color: rgba(201,151,58,0.24);
+}
+
+/* Left bar indicator for active */
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: linear-gradient(180deg, var(--gold-bright), var(--cinnabar-bright));
+  border-radius: 0 3px 3px 0;
+  z-index: 2;
+}
+
+.nav-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  width: 18px;
+  text-align: center;
+  line-height: 1;
+  opacity: 0.80;
+}
+
+.nav-item.active .nav-icon,
+.nav-item:hover .nav-icon {
+  opacity: 1;
+}
+
+.nav-label {
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.sidebar.sidebar--collapsed .nav-label {
+  opacity: 0;
+  width: 0;
+  pointer-events: none;
+}
+
+/* Collapse toggle button */
+.sidebar-collapse-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 10px 0;
+  padding: 7px;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  border: 1px solid rgba(201,151,58,0.12);
+  color: var(--muted);
+  font-size: 13px;
+  transition: var(--transition);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sidebar-collapse-btn:hover {
+  color: var(--gold-bright);
+  border-color: rgba(201,151,58,0.32);
+  background: rgba(201,151,58,0.05);
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(201,151,58,0.08);
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+  opacity: 0.65;
+}
+
+.sidebar.sidebar--collapsed .sidebar-footer {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =============================================
+   SIDEBAR FRESHNESS INDICATOR
+============================================= */
+.sidebar-freshness {
+  padding: 7px 16px 9px;
+  border-top: 1px solid rgba(201,151,58,0.08);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  overflow: hidden;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.sidebar.sidebar--collapsed .sidebar-freshness {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-freshness-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--jade-bright);
+  box-shadow: 0 0 5px var(--jade-bright);
+  flex-shrink: 0;
+  animation: pulse-dot 2.5s ease-in-out infinite;
+}
+
+.sidebar-freshness-text {
+  font-size: 8px;
+  color: var(--muted);
+  letter-spacing: 0.10em;
+}
+
+.sidebar-freshness-time {
+  font-size: 8px;
+  color: var(--jade-bright);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* Energy qi dot on active nav item */
+.nav-qi-dot {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--gold-bright);
+  box-shadow: 0 0 8px rgba(201,151,58,0.80);
+  animation: cultivation-pulse 2.4s ease-in-out infinite;
+  z-index: 2;
+  pointer-events: none;
+}

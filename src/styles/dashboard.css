@@ -1,0 +1,328 @@
+/* =============================================
+   SECTION HEADER
+============================================= */
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 6px;
+}
+.section-header-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,151,58,0.42) 50%, transparent);
+  position: relative;
+}
+.section-header-line::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(201,151,58,0.62);
+}
+.section-header-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  white-space: nowrap;
+}
+
+/* =============================================
+   SECTION HEADER V2
+============================================= */
+.section-header-v2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.section-header-v2-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(201,151,58,0.06);
+  border: 1px solid rgba(201,151,58,0.18);
+  flex-shrink: 0;
+  color: var(--gold-bright);
+}
+.section-header-v2-text { flex: 1; }
+.section-header-v2-label {
+  font-family: var(--font-title);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  display: block;
+}
+.section-header-v2-sub {
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  display: block;
+  margin-top: 2px;
+}
+.section-header-v2-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(201,151,58,0.42), transparent);
+}
+.section-header-v2-deco {
+  font-family: var(--font-deco);
+  font-size: 17px;
+  color: rgba(201,151,58,0.22);
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* =============================================
+   RANK CARDS — Cinematic podium
+============================================= */
+.rank-podium {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+.rank-podium-lower {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Base rank card */
+.rank-card {
+  position: relative;
+  background: rgba(12, 8, 3, 0.96);
+  border: 1px solid rgba(var(--rank-accent-rgb, 201,151,58), 0.24);
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  overflow: hidden;
+  transition: border-color 0.26s, box-shadow 0.26s, transform 0.26s;
+  cursor: default;
+}
+
+.rank-card:hover {
+  border-color: rgba(var(--rank-accent-rgb, 201,151,58), 0.50);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.60), 0 0 0 1px rgba(var(--rank-accent-rgb, 201,151,58), 0.16);
+  transform: translateY(-1px);
+}
+
+/* First place — full spotlight treatment */
+.rank-card--first {
+  padding: 28px 30px;
+  background: linear-gradient(135deg,
+    rgba(18, 12, 4, 0.98) 0%,
+    rgba(12, 8, 3, 0.98) 100%
+  );
+}
+
+/* Atmospheric mist glow (rank-specific color) */
+.rank-card-mist {
+  position: absolute;
+  top: -30%;
+  right: -10%;
+  width: 60%;
+  height: 160%;
+  background: radial-gradient(ellipse at center,
+    rgba(var(--rank-accent-rgb, 201,151,58), 0.07) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Large numeral watermark */
+.rank-card-numeral {
+  position: absolute;
+  right: 16px;
+  bottom: -12px;
+  font-family: var(--font-title);
+  font-size: 100px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--rank-accent, var(--gold-bright));
+  opacity: 0.060;
+  pointer-events: none;
+  user-select: none;
+  letter-spacing: -0.02em;
+}
+
+.rank-card--first .rank-card-numeral {
+  font-size: 130px;
+  opacity: 0.065;
+}
+
+.rank-card-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rank-card-badge {
+  font-family: var(--font-title);
+  font-size: 9px;
+  letter-spacing: 0.38em;
+  color: var(--rank-accent, var(--gold-bright));
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+
+.rank-card-name {
+  font-family: var(--font-title);
+  font-size: clamp(18px, 2.6vw, 26px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rank-card--first .rank-card-name {
+  font-size: clamp(22px, 3.2vw, 36px);
+}
+
+.rank-card-cp {
+  font-family: var(--font-title);
+  font-size: clamp(13px, 1.8vw, 18px);
+  font-weight: 700;
+  color: var(--bright-soft);
+  letter-spacing: 0.06em;
+  opacity: 0.88;
+}
+
+.rank-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.rank-card-guild {
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.rank-card-trib {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-family: monospace;
+  font-size: 9px;
+  font-weight: 700;
+  border: 1px solid;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Bottom accent line */
+.rank-card-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    rgba(var(--rank-accent-rgb, 201,151,58), 0.50) 30%,
+    rgba(var(--rank-accent-rgb, 201,151,58), 0.80) 50%,
+    rgba(var(--rank-accent-rgb, 201,151,58), 0.50) 70%,
+    transparent 100%
+  );
+}
+
+/* =============================================
+   DRAGON DIVIDER — Section separator
+============================================= */
+.dragon-divider {
+  display: block;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  height: 36px;
+  opacity: 0.70;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* =============================================
+   AMBIENT BACKGROUND ORB — single, subtle
+============================================= */
+.bg-orbs {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.bg-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+}
+
+.bg-orb--1 {
+  width: 700px;
+  height: 700px;
+  background: radial-gradient(circle at center,
+    rgba(201,151,58,0.055) 0%,
+    rgba(201,151,58,0.018) 40%,
+    transparent 70%
+  );
+  top: -240px;
+  left: 18%;
+  animation: mist-shift 55s ease-in-out infinite;
+}
+
+.bg-orb--2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle at center,
+    rgba(179,58,42,0.045) 0%,
+    transparent 70%
+  );
+  bottom: -120px;
+  left: -60px;
+  animation: mist-shift 68s ease-in-out infinite reverse;
+}
+
+/* =============================================
+   MOBILE RANK CARDS
+============================================= */
+@media (max-width: 767px) {
+  .rank-podium-lower {
+    grid-template-columns: 1fr;
+  }
+  .rank-card {
+    padding: 16px 18px;
+  }
+  .rank-card--first {
+    padding: 20px 22px;
+  }
+  .rank-card-numeral { font-size: 72px; }
+  .rank-card--first .rank-card-numeral { font-size: 96px; }
+}

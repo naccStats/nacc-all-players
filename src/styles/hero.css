@@ -1,0 +1,288 @@
+/* =============================================
+   HERO SECTION (Dashboard) — Cinematic
+============================================= */
+.hero-section {
+  position: relative;
+  width: calc(100% + 54px);
+  margin: 0 -27px 36px;
+  height: clamp(380px, 50vh, 540px);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #060402;
+}
+
+/* Mountain SVG — fills bottom half */
+.hero-mountains {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70%;
+  pointer-events: none;
+  z-index: 1;
+}
+.hero-mountains svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Ambient gold mist pool at the base */
+.hero-mist-pool {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 35%;
+  background: radial-gradient(ellipse 80% 60% at 50% 100%,
+    rgba(201,151,58,0.07) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Faint gradient vignette top */
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 40%;
+  background: linear-gradient(180deg, #060402 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Content layer */
+.hero-content {
+  position: relative;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 0 32px;
+  text-align: center;
+  width: 100%;
+}
+
+/* Background Chinese watermark — faint, huge, behind title */
+.hero-bg-char {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -56%);
+  font-family: var(--font-deco);
+  font-size: clamp(200px, 32vw, 380px);
+  line-height: 1;
+  color: var(--gold-bright);
+  opacity: 0.028;
+  pointer-events: none;
+  user-select: none;
+  white-space: nowrap;
+}
+
+/* Giant Cinzel title — extreme scale, the anchor */
+.hero-main-title {
+  font-family: var(--font-title);
+  font-size: clamp(80px, 13vw, 160px);
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  line-height: 0.9;
+  color: var(--bright);
+  text-shadow:
+    0 2px 40px rgba(201,151,58,0.28),
+    0 0 80px rgba(201,151,58,0.10);
+  margin: 0;
+  position: relative;
+}
+
+/* Subtitle — tracked, sparse */
+.hero-sub-title {
+  font-family: var(--font-title);
+  font-size: clamp(8px, 1.2vw, 12px);
+  letter-spacing: 0.52em;
+  color: rgba(201,151,58,0.55);
+  text-transform: uppercase;
+  margin: 0;
+}
+
+/* Stat row — editorial, no pills */
+.hero-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 6px;
+}
+
+.hero-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 clamp(14px, 2.5vw, 28px);
+}
+
+.hero-stat-val {
+  font-family: var(--font-title);
+  font-size: clamp(16px, 2.2vw, 22px);
+  font-weight: 700;
+  color: var(--bright-soft);
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.hero-stat-label {
+  font-family: var(--font-ui);
+  font-size: clamp(7px, 0.9vw, 9px);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.20em;
+}
+
+.hero-stat-divider {
+  width: 1px;
+  height: 28px;
+  background: rgba(201,151,58,0.20);
+  flex-shrink: 0;
+}
+
+/* ── Mobile ── */
+@media (max-width: 767px) {
+  .hero-section {
+    width: calc(100% + 20px);
+    margin: 0 -10px 22px;
+    height: clamp(300px, 52vw, 380px);
+  }
+  .hero-stat-row { flex-wrap: wrap; justify-content: center; gap: 8px; }
+  .hero-stat-divider { display: none; }
+  .hero-stat-item { padding: 0 12px; }
+  .hero-bg-char { font-size: clamp(150px, 55vw, 240px); }
+}
+
+/* ── Tablet ── */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .hero-section {
+    height: clamp(340px, 46vw, 460px);
+    margin: 0 -21px 28px;
+    width: calc(100% + 42px);
+  }
+}
+
+/* =============================================
+   PLAYER PROFILE — Cinematic Banner
+============================================= */
+.profile-hero-banner {
+  position: relative;
+  width: calc(100% + 54px);
+  margin: 0 -27px 24px;
+  height: 200px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 0 28px 20px;
+}
+
+.profile-hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.profile-hero-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+}
+
+.profile-aura {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: aura-breathe 5s ease-in-out infinite;
+}
+
+.profile-tier-brand {
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-deco);
+  font-size: clamp(60px, 10vw, 100px);
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.08;
+  z-index: 1;
+}
+
+@media (max-width: 767px) {
+  .profile-hero-banner {
+    width: calc(100% + 20px);
+    margin: 0 -10px 18px;
+    height: 160px;
+    padding: 0 16px 16px;
+  }
+  .profile-tier-brand { font-size: 56px; right: 10px; }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .profile-hero-banner {
+    width: calc(100% + 42px);
+    margin: 0 -21px 20px;
+  }
+}
+
+/* =============================================
+   MOUSE PARALLAX LAYERS
+============================================= */
+.parallax-layers {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.px-layer {
+  position: absolute;
+  inset: -12%;
+  will-change: transform;
+}
+
+/* Nebula — very subtle */
+.px-nebula {
+  transform: translateX(var(--px-x1, 0px)) translateY(var(--px-y1, 0px));
+  background:
+    radial-gradient(ellipse 42% 32% at 26% 36%, rgba(201,151,58,0.028) 0%, transparent 68%),
+    radial-gradient(ellipse 30% 22% at 74% 64%, rgba(40,130,200,0.022) 0%, transparent 62%);
+}
+
+/* Mountains — anchored bottom, single layer */
+.px-mountains {
+  transform: translateX(var(--px-x3, 0px)) translateY(var(--px-y3, 0px));
+  opacity: 0.85;
+}
+
+/* =============================================
+   PAGE WATERMARK
+============================================= */
+.page-watermark {
+  position: fixed;
+  right: -20px;
+  bottom: 60px;
+  font-family: var(--font-deco);
+  font-size: 300px;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  color: var(--gold-bright);
+  opacity: 0.030;
+  z-index: 0;
+}
+@media (max-width: 767px) {
+  .page-watermark { font-size: 140px; right: -8px; bottom: 80px; }
+}

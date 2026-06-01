@@ -2,12 +2,16 @@ import { useContext, useMemo } from 'react';
 import { PlayerContext } from '../App';
 import { formatCP } from '../utils/formatters';
 import { bp, rGrid, rValueLabel } from '../utils/chartResponsive';
+import { TB } from '../utils/chartDefaults';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion } from 'framer-motion';
 import { PawPrint, Shield, Zap, Users, TrendingUp, TrendingDown } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 
 const BEASTS = ['Luohou', 'Kunpeng', 'Diting', 'Anzu'];
+
+const BEAST_CHARS = { Luohou: '罗', Kunpeng: '鹏', Diting: '谛', Anzu: '祖' };
 
 const BEAST_COLORS = {
   Luohou:  '#CB4335',
@@ -23,7 +27,6 @@ const BEAST_DESC = {
   Anzu:    '',
 };
 
-const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(201,146,11,0.35)' };
 const CT = '#8B7E6A';
 
 export default function ChaosBestiary() {
@@ -44,7 +47,8 @@ export default function ChaosBestiary() {
 
       const guildMap = {};
       for (const p of owners) {
-        const g = p.guild || 'NoGuild';
+        if (!p.guild) continue;
+        const g = p.guild;
         guildMap[g] = (guildMap[g] || 0) + 1;
       }
       const topGuilds = Object.entries(guildMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
@@ -169,8 +173,71 @@ export default function ChaosBestiary() {
     };
   }, [beastData]);
 
+  /* ── Guild beast armies ─────────────────────────────────────────────── */
+  const guildBeastData = useMemo(() => {
+    const guilds = {};
+    for (const p of players) {
+      if (!p.chaosBeast || !BEASTS.includes(p.chaosBeast)) continue;
+      if (!p.guild) continue;
+      const g = p.guild;
+      if (!guilds[g]) guilds[g] = { Luohou: 0, Kunpeng: 0, Diting: 0, Anzu: 0, total: 0 };
+      guilds[g][p.chaosBeast]++;
+      guilds[g].total++;
+    }
+    return Object.entries(guilds)
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 8)
+      .map(([name, counts]) => ({ name, ...counts }));
+  }, [players]);
+
+  const guildBeastOption = useMemo(() => {
+    if (!guildBeastData.length) return null;
+    return (w) => {
+      const { pick } = bp(w);
+      return {
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: { type: 'shadow' },
+          backgroundColor: TB.bg, borderColor: TB.bc, borderWidth: 1,
+          textStyle: { color: '#EDE0C4', fontSize: 11 },
+          formatter: params => {
+            const d = guildBeastData[params[0].dataIndex];
+            return `<b style="color:var(--gold-bright)">${d.name}</b><br/>` +
+              params.map(p => `<span style="color:${BEAST_COLORS[p.seriesName]}">■</span> ${p.seriesName}: <b>${p.value}</b>`).join('<br/>');
+          },
+        },
+        grid: { top: 10, bottom: pick(36, 28), left: pick(80, 110), right: pick(16, 24) },
+        xAxis: {
+          type: 'value',
+          axisLabel: { color: '#7D7263', fontSize: 9 },
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+          splitLine: { lineStyle: { color: 'rgba(201,146,11,0.06)', type: 'dashed' } },
+        },
+        yAxis: {
+          type: 'category', data: guildBeastData.map(d => d.name),
+          axisLabel: { color: '#EDE0C4', fontSize: pick(9, 10) },
+          axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
+        },
+        series: BEASTS.map(beast => ({
+          name: beast,
+          type: 'bar',
+          data: guildBeastData.map(d => d[beast] || 0),
+          barCategoryGap: '30%',
+          itemStyle: { color: BEAST_COLORS[beast], borderRadius: [0, 3, 3, 0] },
+          emphasis: { itemStyle: { shadowBlur: 10, shadowColor: BEAST_COLORS[beast] } },
+        })),
+      };
+    };
+  }, [guildBeastData]);
+
   return (
     <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      <PageHeader
+        title="Chaos Bestiary"
+        subtitle="Legendary beast unlock tracker & dominance analytics"
+        char="兽"
+        accent="var(--cinnabar-bright)"
+      />
 
       {/* Header */}
       <GlassCard variant="gold">
@@ -250,6 +317,14 @@ export default function ChaosBestiary() {
               }) : (
                 <div style={{ fontSize: 10, color: 'var(--muted)' }}>—</div>
               )}
+
+              {/* Beast deco watermark */}
+              <span aria-hidden="true" style={{
+                position: 'absolute', bottom: 8, right: 10,
+                fontFamily: 'var(--font-deco)', fontSize: 54,
+                color: `${color}14`,
+                pointerEvents: 'none', userSelect: 'none', lineHeight: 1,
+              }}>{BEAST_CHARS[beast]}</span>
             </GlassCard>
           );
         })}
@@ -265,9 +340,9 @@ export default function ChaosBestiary() {
           <ChartContainer option={dominanceOption} type="bar" maxHeight={260} />
         </GlassCard>
 
-        <GlassCard variant="purple">
+        <GlassCard variant="gold">
           <div className="flex items-center gap-2 mb-2">
-            <Users size={14} style={{ color: 'var(--imperial-bright)' }} />
+            <Users size={14} style={{ color: 'var(--jade-bright)' }} />
             <h2 className="text-sm font-display font-bold gradient-text">Beast Popularity</h2>
           </div>
           <ChartContainer option={popularityOption} type="pie" maxHeight={280} />
@@ -282,6 +357,28 @@ export default function ChaosBestiary() {
         </div>
           <ChartContainer option={avgCPOption} type="bar" maxHeight={260} />
       </GlassCard>
+
+      {/* Guild Beast Armies */}
+      {guildBeastOption && (
+        <GlassCard variant="red">
+          <div className="flex items-center gap-2 mb-2">
+            <PawPrint size={14} style={{ color: 'var(--cinnabar-bright)' }} />
+            <h2 className="text-sm font-display font-bold gradient-text">Guild Beast Armies</h2>
+          </div>
+          <div style={{ fontSize: 9, color: 'var(--muted)', marginBottom: 10 }}>
+            Top 8 guilds by chaos beast count — hover for breakdown
+          </div>
+          <div style={{ display: 'flex', gap: 16, marginBottom: 10 }}>
+            {BEASTS.map(b => (
+              <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                <div style={{ width: 9, height: 9, borderRadius: 2, background: BEAST_COLORS[b] }} />
+                <span style={{ fontSize: 9, color: 'var(--muted)' }}>{b}</span>
+              </div>
+            ))}
+          </div>
+          <ChartContainer option={guildBeastOption} type="bar" maxHeight={280} />
+        </GlassCard>
+      )}
     </motion.div>
   );
 }

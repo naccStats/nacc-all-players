@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import Papa from 'papaparse';
+import { normalizeGuild } from '../utils/formatters';
 
 const DataContext = createContext();
 export const useDataContext = () => useContext(DataContext);
@@ -73,7 +74,7 @@ export const DataContextProvider = ({ children }) => {
               uid,
               player,
               region: (row.Region || 'NA').toString().trim(),
-              guild: (row.Guild || '').toString().trim(),
+              guild: normalizeGuild(row.Guild),
               cp: toNumber(row.CP),
               fdu: toNumber(row.FDU),
               fdd: toNumber(row.FDD),

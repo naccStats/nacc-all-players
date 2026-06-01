@@ -1,0 +1,94 @@
+/* =============================================
+   LOADING & ERROR SCREENS
+============================================= */
+.loading-screen,
+.error-screen {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--ink);
+}
+
+
+/* =============================================
+   QI RIPPLE (global click effect)
+============================================= */
+.qi-ripple-burst {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(212,168,67,0.85);
+  box-shadow: 0 0 8px rgba(212,168,67,0.45), inset 0 0 4px rgba(212,168,67,0.20);
+  animation: qi-burst 0.60s cubic-bezier(0.2, 0.8, 0.4, 1) forwards;
+  transform: translate(-50%,-50%) scale(0);
+}
+
+
+/* =============================================
+   ENHANCED LOADING SCREEN
+============================================= */
+.loading-screen--cinematic {
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,168,67,0.06) 0%, transparent 60%), var(--ink) !important;
+  gap: 0 !important;
+}
+
+.cultivation-loader {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin-bottom: 28px;
+}
+
+.cultivation-loader-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.loader-arc-track {
+  opacity: 0.12;
+}
+
+.loader-arc-fill {
+  stroke-linecap: round;
+  animation: loader-arc 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform-origin: center;
+}
+
+.loader-yy {
+  transform-origin: 44px 44px;
+  animation: cultivation-pulse 2.2s ease-in-out infinite;
+}
+
+.loading-cn-text {
+  font-family: var(--font-hero);
+  font-size: clamp(22px, 4vw, 30px);
+  color: var(--gold-bright);
+  opacity: 0.75;
+  margin-bottom: 14px;
+  letter-spacing: 0.55em;
+}
+
+.loading-en-text {
+  font-family: var(--font-title);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.30em;
+  text-transform: uppercase;
+}
+
+/* =============================================
+   INK MATERIALIZE
+============================================= */
+.ink-materialize {
+  animation: ink-materialize 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}

@@ -10,14 +10,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Header = ({ onMenuClick }) => {
   const { lastUpdated, players } = useDataContext();
   const navigate = useNavigate();
-  const [query, setQuery] = useState('');
-  const [focused, setFocused] = useState(false);
+  const [query,          setQuery]          = useState('');
+  const [focused,        setFocused]        = useState(false);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const debounced = useDebounce(query, 250);
-  const boxRef  = useRef(null);
-  const inputRef = useRef(null);
+  const boxRef    = useRef(null);
+  const inputRef  = useRef(null);
 
-  // Cmd+K / Ctrl+K → focus search
+  /* Cmd/Ctrl+K → focus search */
   useEffect(() => {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
@@ -44,34 +44,31 @@ const Header = ({ onMenuClick }) => {
       ).slice(0, 6)
     : [];
 
-  // Close panel on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (boxRef.current && !boxRef.current.contains(e.target)) {
-        setFocused(false);
-      }
+      if (boxRef.current && !boxRef.current.contains(e.target)) setFocused(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const showDrop = focused && results.length > 0;
+  const showDrop  = focused && results.length > 0;
   const showPanel = !!selectedPlayer && !showDrop;
 
   return (
     <header className="top-header">
-      <button
-        className="hamburger-btn"
-        onClick={onMenuClick}
-        aria-label="Open navigation"
-      >
+      <button className="hamburger-btn" onClick={onMenuClick} aria-label="Open navigation">
         <Menu size={18} />
       </button>
 
       <div className="header-left">
         <h2>
-          <span className="header-title-full">Immortal Cultivation Records</span>
-          <span className="header-title-short">仙 &middot; Immortal Records</span>
+          <span className="header-title-full header-title-shimmer">
+            Immortal Cultivation Records
+          </span>
+          <span className="header-title-short header-title-shimmer">
+            仙 · Immortal Records
+          </span>
         </h2>
         <div className="header-meta">
           <span className="status-dot" />
@@ -104,10 +101,10 @@ const Header = ({ onMenuClick }) => {
             {showDrop && (
               <motion.div
                 className="search-dropdown"
-                initial={{ opacity: 0, y: -6 }}
+                initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.16 }}
               >
                 {results.map(p => (
                   <div
@@ -132,14 +129,19 @@ const Header = ({ onMenuClick }) => {
             {showPanel && (
               <motion.div
                 className="search-player-panel"
-                initial={{ opacity: 0, y: -8, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.97 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                animate={{ opacity: 1,  y: 0,   scale: 1    }}
+                exit={{ opacity: 0,    y: -10,  scale: 0.96 }}
+                transition={{ duration: 0.20 }}
               >
                 <div className="spp-header">
                   <div>
-                    <div className="spp-name">{selectedPlayer.player}</div>
+                    <div
+                      className="spp-name"
+                      style={{ color: tribColor(selectedPlayer.tribulation) || 'var(--gold-bright)' }}
+                    >
+                      {selectedPlayer.player}
+                    </div>
                     <div className="spp-sub">
                       {selectedPlayer.guild || '—'} · UID {selectedPlayer.uid}
                       {selectedPlayer.region ? ` · ${selectedPlayer.region}` : ''}
@@ -153,49 +155,29 @@ const Header = ({ onMenuClick }) => {
                 </div>
 
                 <div className="spp-stats">
-                  <div className="spp-stat">
-                    <span className="spp-label">Combat Power</span>
-                    <span className="spp-val" style={{ color: 'var(--gold-bright)', fontSize: 15 }}>
-                      {formatCP(selectedPlayer.cp || 0)}
-                    </span>
-                  </div>
-
-                  <div className="spp-stat">
-                    <span className="spp-label">Tribulation</span>
-                    <span className="spp-val" style={{ color: tribColor(selectedPlayer.tribulation) }}>
-                      {tribLabel(selectedPlayer.tribulation) || selectedPlayer.tribulation || '—'}
-                    </span>
-                  </div>
-
-                  <div className="spp-stat">
-                    <span className="spp-label">FDU</span>
-                    <span className="spp-val">{(selectedPlayer.fdu || 0).toLocaleString()}</span>
-                  </div>
-
-                  <div className="spp-stat">
-                    <span className="spp-label">FDD</span>
-                    <span className="spp-val">{(selectedPlayer.fdd || 0).toLocaleString()}</span>
-                  </div>
-
-                  <div className="spp-stat">
-                    <span className="spp-label">Total Finals</span>
-                    <span className="spp-val">{(selectedPlayer.totalFinals || 0).toLocaleString()}</span>
-                  </div>
-
-                  <div className="spp-stat">
-                    <span className="spp-label">Chaos Beast</span>
-                    <span className="spp-val" style={{
-                      color: selectedPlayer.hasChaos ? 'var(--cinnabar-bright)' : 'var(--muted)'
-                    }}>
-                      {selectedPlayer.hasChaos ? (selectedPlayer.chaosBeast || 'Yes') : 'None'}
-                    </span>
-                  </div>
+                  {[
+                    { label: 'Combat Power', val: formatCP(selectedPlayer.cp || 0),         color: 'var(--gold-bright)',    size: 15 },
+                    { label: 'Tribulation',  val: tribLabel(selectedPlayer.tribulation) || selectedPlayer.tribulation || '—',
+                      color: tribColor(selectedPlayer.tribulation) || 'var(--muted)' },
+                    { label: 'FDU',          val: (selectedPlayer.fdu  || 0).toLocaleString() },
+                    { label: 'FDD',          val: (selectedPlayer.fdd  || 0).toLocaleString() },
+                    { label: 'Total Finals', val: (selectedPlayer.totalFinals || 0).toLocaleString() },
+                    { label: 'Chaos Beast',  val: selectedPlayer.hasChaos ? (selectedPlayer.chaosBeast || 'Yes') : 'None',
+                      color: selectedPlayer.hasChaos ? 'var(--cinnabar-bright)' : 'var(--muted)' },
+                  ].map(({ label, val, color, size }) => (
+                    <div key={label} className="spp-stat">
+                      <span className="spp-label">{label}</span>
+                      <span className="spp-val" style={{ color: color || 'var(--text)', fontSize: size }}>
+                        {val}
+                      </span>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="spp-footer">
                   {selectedPlayer.updated === 'N' || selectedPlayer.updated === 'NO'
                     ? <span style={{ color: 'var(--muted)' }}>● AFK</span>
-                    : <span style={{ color: '#00E87C' }}>● Active</span>
+                    : <span style={{ color: '#00E87C'      }}>● Active</span>
                   }
                   <button
                     className="spp-profile-btn"

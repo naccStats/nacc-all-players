@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import ReactECharts from 'echarts-for-react';
 
 // IMPORTANT: do NOT import from chartResponsive.js here.
@@ -46,7 +46,7 @@ const CHART_DEFAULTS = {
  *   gl         — explicit GL tap-tooltip flag (overrides type default)
  *   opts       — passed to ReactECharts opts prop (e.g. { renderer: 'svg' })
  */
-export default function ChartContainer({ option, type, ratio, maxHeight, opts = {}, square, gl }) {
+const ChartContainer = React.memo(function ChartContainer({ option, type, ratio, maxHeight, opts = {}, square, gl }) {
   const td         = (type && CHART_DEFAULTS[type]) || {};
   const _ratio     = ratio     !== undefined ? ratio     : (td.ratio     ?? 9 / 16);
   const _maxHeight = maxHeight !== undefined ? maxHeight : (td.maxHeight ?? 400);
@@ -208,6 +208,14 @@ export default function ChartContainer({ option, type, ratio, maxHeight, opts = 
     return { ...resolvedOption, tooltip: Array.isArray(t) ? t.map(patch) : patch(t) };
   })();
 
+  if (!finalOption) {
+    return (
+      <div ref={wrapRef} style={{ width: '100%', height: dims.height || 240, position: 'relative' }}>
+        <div className="chart-skeleton" style={{ width: '100%', height: '100%', borderRadius: 8 }} />
+      </div>
+    );
+  }
+
   return (
     <div
       ref={wrapRef}
@@ -257,4 +265,6 @@ export default function ChartContainer({ option, type, ratio, maxHeight, opts = 
       )}
     </div>
   );
-}
+});
+
+export default ChartContainer;

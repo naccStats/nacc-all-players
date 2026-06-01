@@ -10,6 +10,7 @@ import { useToast } from '../hooks/useToast';
 import { motion } from 'framer-motion';
 import { ChevronDown, ChevronUp, Search, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import PageHeader from '../components/PageHeader';
 
 export default function PlayerRankings() {
   const rawPlayers = useContext(PlayerContext);
@@ -130,6 +131,12 @@ export default function PlayerRankings() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.4 }}
     >
+      <PageHeader
+        title="Rankings"
+        subtitle="Full leaderboard · NA Region"
+        char="榜"
+        accent="var(--cinnabar-bright)"
+      />
       {/* Filter + Sort row */}
       <GlassCard>
         <div className="flex flex-col md:flex-row md:items-center gap-3">
@@ -179,9 +186,9 @@ export default function PlayerRankings() {
               marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5,
               padding: '4px 14px', borderRadius: 20, fontSize: 10, cursor: 'pointer',
               fontFamily: 'var(--font-title)', letterSpacing: '0.08em',
-              background: 'rgba(176,38,255,0.08)',
-              color: 'var(--imperial-bright)',
-              border: '1px solid rgba(176,38,255,0.3)',
+              background: 'rgba(201,151,58,0.06)',
+              color: 'var(--gold-bright)',
+              border: '1px solid rgba(201,151,58,0.24)',
               transition: 'all 0.15s',
             }}
           >
@@ -230,9 +237,9 @@ export default function PlayerRankings() {
             return (
               <motion.div
                 key={p.uid}
-                initial={{ opacity: 0, y: 6 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: i * 0.015 }}
+                transition={{ duration: 0.28, delay: Math.min(i, 30) * 0.025, ease: 'easeOut' }}
                 onClick={() => navigate('/player/' + p.uid)}
                 style={{
                   background: isTop ? 'rgba(201,146,11,0.04)' : 'rgba(13,7,24,0.6)',
@@ -360,9 +367,9 @@ export default function PlayerRankings() {
                       key={p.uid}
                       className="table-row-hover"
                       style={{ borderBottom: '1px solid rgba(255,255,255,0.03)', background: rowBg, cursor: 'pointer', position: 'relative' }}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.2, delay: i * 0.01 }}
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.28, delay: Math.min(i, 30) * 0.025, ease: 'easeOut' }}
                       onClick={() => navigate('/player/' + p.uid)}
                     >
                       <td style={{ padding: '10px 16px' }}>

@@ -3,15 +3,14 @@ import { PlayerContext } from '../App';
 import { formatCP, formatCPShort } from '../utils/formatters';
 import { tribRank, tribColor } from '../utils/tribulationSystem';
 import { bp, rGrid, rLabel, rValueLabel, rNameText, CHART_BREAKPOINTS } from '../utils/chartResponsive';
+import { TB, T, SL } from '../utils/chartDefaults';
 import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, ScatterChart, TrendingUp, Zap, Target, Layers, Calculator, Thermometer, ZoomIn, ZoomOut, Search } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import 'echarts-gl';
 
-const T = { color: '#7D7263' };
-const TB = { bg: 'rgba(13,7,24,0.97)', bc: 'rgba(212,168,67,0.32)' };
-const SL = { color: 'rgba(212,168,67,0.08)', type: 'dashed' };
 
 const COMPOSITE_TOP_N = 15; // composite score leaderboard
 const AUTOCOMPLETE_MAX = 8;  // max autocomplete suggestions
@@ -173,6 +172,12 @@ export default function AdvancedStatistics() {
 
   return (
     <motion.div className="space-y-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+      <PageHeader
+        title="Deep Analysis"
+        subtitle="Deep statistical analysis & percentile breakdowns"
+        char="道"
+        accent="var(--azure-bright)"
+      />
       {/* Mini stat row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
@@ -308,11 +313,11 @@ export default function AdvancedStatistics() {
                   style={{ marginTop: 8, padding: '10px 12px', borderRadius: 8, background: 'rgba(0,0,0,0.32)', border: '1px solid rgba(212,168,67,0.2)' }}>
                   {/* Header */}
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 12, fontFamily: 'var(--font-title)', fontWeight: 700, color: '#FFD700' }}>{p.player}</span>
+                    <span style={{ fontSize: 12, fontFamily: 'var(--font-title)', fontWeight: 700, color: 'var(--gold-bright)' }}>{p.player}</span>
                     {p.guild && <span style={{ fontSize: 9, color: 'var(--muted)' }}>{p.guild}</span>}
                     {p.tribulation && (
-                      <span style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700, color: 'var(--imperial-bright)',
-                        padding: '1px 6px', borderRadius: 4, background: 'rgba(201,67,169,0.12)', border: '1px solid rgba(201,67,169,0.25)' }}>
+                      <span style={{ fontSize: 9, fontFamily: 'monospace', fontWeight: 700, color: 'var(--gold-pale)',
+                        padding: '1px 6px', borderRadius: 4, background: 'rgba(201,151,58,0.10)', border: '1px solid rgba(201,151,58,0.22)' }}>
                         {p.tribulation}
                       </span>
                     )}
@@ -508,7 +513,7 @@ function scatter3DChart(data, distance = 160, highlights = new Set()) {
           value: d.value,
           name: d.value[3],
           itemStyle: {
-            color: isHit ? '#FFD700' : (tribColor(d.trib) || '#4B5563'),
+            color: isHit ? '#C9973A' : (tribColor(d.trib) || '#4B5563'),
             opacity: isDimmed ? 0.15 : (isHit ? 1 : 0.82),
           },
         };
@@ -523,10 +528,10 @@ function scatter3DChart(data, distance = 160, highlights = new Set()) {
       data: data.filter(d => highlights.has(d.uid)).map(d => ({
         value: d.value,
         name: d.value[3],
-        itemStyle: { color: '#FFD700', opacity: 1 },
+        itemStyle: { color: '#C9973A', opacity: 1 },
       })),
       symbolSize: isMobile ? 10 : 12,
-      emphasis: { itemStyle: { opacity: 1, shadowBlur: 20, shadowColor: 'rgba(255,215,0,0.6)' } },
+      emphasis: { itemStyle: { opacity: 1, shadowBlur: 8, shadowColor: 'rgba(201,151,58,0.50)' } },
     }] : []),
     ],
   };
@@ -685,7 +690,7 @@ function heatmapChart(heatData, w = 400) {
       min: 0, max: maxCount,
       calculable: true,
       orient: 'horizontal', bottom: 0, left: 'center',
-      inRange: { color: ['rgba(155,89,182,0.15)', '#9B59B6', '#D4A843'] },
+      inRange: { color: ['rgba(13,7,4,0.80)', 'rgba(201,151,58,0.55)', '#D4A843'] },
       textStyle: rNameText(w),
       itemWidth: pick(10, 15), itemHeight: pick(80, 120),
     },

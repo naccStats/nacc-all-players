@@ -1,0 +1,67 @@
+/* =============================================
+   CULTIVATION THEME — CSS VARIABLES
+============================================= */
+:root {
+  /* Core palette — warm ink black, not purple-tinted */
+  --ink:         #060402;
+  --ink-soft:    #0C0906;
+  --ink-mid:     #140F08;
+  --ink-light:   #1E1710;
+
+  /* Accents — Gold primary, others section-specific */
+  --gold:        #9A6F0A;
+  --gold-bright: #C9973A;
+  --gold-pale:   #E0BB6A;
+  --cinnabar:    #7A2418;
+  --cinnabar-bright: #B33A2A;
+  --jade:        #0C7F58;
+  --jade-bright: #19A870;
+  --imperial:    var(--azure);
+  --imperial-bright: var(--azure-bright);
+  --azure:       #165A8C;
+  --azure-bright: #2882C8;
+
+  /* Contrast — near-white for anchor moments */
+  --bright:      #F5EDD6;
+  --bright-soft: #E8D9B8;
+
+  /* Semantic aliases */
+  --accent-cyan:   var(--azure-bright);
+  --accent-azure:  var(--azure-bright);
+  --accent-gold:   var(--gold-bright);
+  --accent-danger: var(--cinnabar-bright);
+
+  /* Glass / surface — warmer tones */
+  --glass:    rgba(18, 12, 6, 0.88);
+  --glass-2:  rgba(26, 19, 10, 0.92);
+  --border:   rgba(201, 151, 58, 0.14);
+  --border-hover: rgba(201, 151, 58, 0.36);
+
+  /* Text */
+  --text:  #E8D9B8;
+  --muted: #8C7E6A;
+
+  /* Glow shadows — more restrained */
+  --glow-gold:     0 0 14px rgba(201,151,58,0.30), 0 0 32px rgba(201,151,58,0.10);
+  --glow-cyan:     0 0 14px rgba(40,130,200,0.30), 0 0 32px rgba(40,130,200,0.10);
+  --glow-cinnabar: 0 0 14px rgba(179,58,42,0.30),  0 0 32px rgba(179,58,42,0.10);
+  --glow-jade:     0 0 14px rgba(25,168,112,0.30), 0 0 32px rgba(25,168,112,0.10);
+
+  /* Fonts */
+  --font-ui:      'Inter', 'Noto Serif SC', system-ui, sans-serif;
+  --font-title:   'Cinzel', 'Noto Serif SC', serif;
+  --font-deco:    'Ma Shan Zheng', serif;
+  --font-hero:    'ZCOOL QingKe HuangYou', 'Ma Shan Zheng', serif;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --transition: all 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Sidebar widths */
+  --sidebar-w: 240px;
+  --sidebar-collapsed-w: 62px;
+
+  /* Gold shimmer — simpler, one pass */
+  --gold-shimmer: linear-gradient(135deg, #F0E0A0 0%, #C9973A 40%, #F0E0A0 75%, #C9973A 100%);
+}

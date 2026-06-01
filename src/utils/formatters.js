@@ -57,4 +57,10 @@ export const formatCPShort = (raw) => {
     if (n == null || isNaN(n)) return '0%';
     return n.toFixed(decimals) + '%';
   };
+
+export function normalizeGuild(raw) {
+  if (!raw) return '';
+  const g = String(raw).trim();
+  return g.toLowerCase() === 'noguild' ? '' : g;
+}
   

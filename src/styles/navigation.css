@@ -1,0 +1,320 @@
+/* =============================================
+   SCROLL TO TOP BUTTON
+============================================= */
+.scroll-to-top {
+  position: fixed;
+  bottom: 28px;
+  right: 22px;
+  z-index: 40;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(10,7,4,0.92);
+  border: 1px solid rgba(201,151,58,0.45);
+  color: var(--gold-bright);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.50);
+  transition: var(--transition);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.scroll-to-top:hover {
+  border-color: rgba(201,151,58,0.75);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.60);
+}
+
+/* =============================================
+   MOBILE BOTTOM NAV
+============================================= */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    height: 56px;
+    background: rgba(6,4,2,0.97);
+    border-top: 1px solid rgba(212,168,67,0.22);
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.55), 0 -1px 0 rgba(212,168,67,0.08);
+    align-items: stretch;
+    justify-content: space-around;
+    padding: 0 4px;
+  }
+  .mobile-bottom-nav a {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 3px;
+    padding: 6px 2px 4px;
+    color: var(--muted);
+    font-family: var(--font-title);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-top: 2px solid transparent;
+    transition: var(--transition);
+  }
+  .mobile-bottom-nav a.active {
+    color: var(--gold-bright);
+    border-top-color: var(--gold-bright);
+  }
+  .mobile-bottom-nav a:not(.active):hover {
+    color: var(--gold-pale);
+  }
+
+  /* More button — matches link style */
+  .mobile-nav-more-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 3px;
+    padding: 6px 2px 4px;
+    color: var(--muted);
+    font-family: var(--font-title);
+    font-size: 8px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    border-top: 2px solid transparent;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+  .mobile-nav-more-btn.active,
+  .mobile-nav-more-btn.route-active {
+    color: var(--gold-bright);
+    border-top-color: var(--gold-bright);
+  }
+  .mobile-nav-more-btn:not(.active):not(.route-active):hover {
+    color: var(--gold-pale);
+  }
+  /* Lift content area above bottom nav */
+  .content-area {
+    padding-bottom: 72px;
+  }
+  /* Adjust scroll-to-top on mobile */
+  .scroll-to-top {
+    bottom: 68px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+  }
+}
+
+/* =============================================
+   MORE BOTTOM SHEET (mobile)
+============================================= */
+.more-sheet-scrim {
+  display: none;
+}
+.more-sheet {
+  display: none;
+}
+
+/* Kill expensive compositing layers while sheet is visible */
+.more-open .bg-orb {
+  animation-play-state: paused !important;
+}
+
+@media (max-width: 767px) {
+  /* Scrim — always rendered, toggled via .visible class */
+  .more-sheet-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+    background: rgba(0, 0, 0, 0.70);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  .more-sheet-scrim.visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Sheet */
+  .more-sheet {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 60;
+    background: linear-gradient(180deg, #100A04 0%, #080502 100%);
+    border: 1px solid rgba(212,168,67,0.28);
+    border-bottom: none;
+    border-radius: 18px 18px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+    overflow: hidden;
+    will-change: transform;
+    transform: translateZ(0);
+  }
+  .more-sheet::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), var(--cinnabar), var(--gold), transparent);
+  }
+
+  /* Drag handle */
+  .more-sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(212,168,67,0.30);
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+
+  /* Sheet header row */
+  .more-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 18px 8px;
+    border-bottom: 1px solid rgba(212,168,67,0.12);
+    flex-shrink: 0;
+  }
+  .more-sheet-title {
+    font-family: var(--font-title);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--gold-pale);
+  }
+  .more-sheet-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(212,168,67,0.08);
+    border: 1px solid rgba(212,168,67,0.20);
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+  .more-sheet-close:hover {
+    color: var(--gold-bright);
+    border-color: rgba(212,168,67,0.50);
+    background: rgba(212,168,67,0.12);
+  }
+
+  /* Route item list */
+  .more-sheet-items {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 12px 16px;
+    gap: 6px;
+  }
+
+  .more-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 14px;
+    border-radius: 12px;
+    background: rgba(16,10,4,0.60);
+    border: 1px solid rgba(212,168,67,0.10);
+    cursor: pointer;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .more-sheet-item:hover {
+    background: rgba(212,168,67,0.07);
+    border-color: rgba(212,168,67,0.28);
+  }
+  .more-sheet-item.active {
+    background: rgba(212,168,67,0.10);
+    border-color: rgba(212,168,67,0.40);
+  }
+  /* Active left bar */
+  .more-sheet-item.active::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 3px;
+    background: linear-gradient(180deg, var(--gold-bright), var(--cinnabar-bright));
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 8px rgba(212,168,67,0.55);
+  }
+
+  /* Icon container */
+  .more-sheet-item-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: rgba(212,168,67,0.08);
+    border: 1px solid rgba(212,168,67,0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold-bright);
+    flex-shrink: 0;
+  }
+  .more-sheet-item.active .more-sheet-item-icon {
+    background: rgba(212,168,67,0.14);
+    border-color: rgba(212,168,67,0.40);
+    box-shadow: 0 0 12px rgba(212,168,67,0.22);
+  }
+
+  /* Label + description */
+  .more-sheet-item-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+  .more-sheet-item-label {
+    font-family: var(--font-title);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--text);
+  }
+  .more-sheet-item.active .more-sheet-item-label {
+    color: var(--gold-bright);
+  }
+  .more-sheet-item-desc {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Decorative Chinese character watermark inside item */
+  .more-sheet-item-deco {
+    font-family: var(--font-deco);
+    font-size: 36px;
+    line-height: 1;
+    color: var(--gold-bright);
+    opacity: 0.08;
+    flex-shrink: 0;
+    pointer-events: none;
+    user-select: none;
+  }
+  .more-sheet-item.active .more-sheet-item-deco {
+    opacity: 0.16;
+  }
+}

@@ -30,16 +30,16 @@ export const computeGlobalStats = (players) => {
   const tribDist = {};
 
   for (const p of players) {
-    const guildName = p.guild || 'NoGuild';
-    if (!guildMap[guildName]) guildMap[guildName] = { name: guildName, totalCP: 0, members: 0 };
-    guildMap[guildName].totalCP += p.cp || 0;
-    guildMap[guildName].members += 1;
-
     if (p.tribulation) {
-      // Group by tier prefix (strip trailing sub-rank digit) for pie charts
       const tKey = p.tribulation.replace(/\d+$/, '');
       tribDist[tKey] = (tribDist[tKey] || 0) + 1;
     }
+
+    if (!p.guild) continue;
+    const guildName = p.guild;
+    if (!guildMap[guildName]) guildMap[guildName] = { name: guildName, totalCP: 0, members: 0 };
+    guildMap[guildName].totalCP += p.cp || 0;
+    guildMap[guildName].members += 1;
   }
 
   const topGuilds = Object.values(guildMap)
@@ -71,7 +71,8 @@ export const computeGuildStats = (players) => {
 
   const map = {};
   for (const p of players) {
-    const guildName = p.guild || 'NoGuild';
+    if (!p.guild) continue;
+    const guildName = p.guild;
     if (!map[guildName]) {
       map[guildName] = {
         name: guildName,
