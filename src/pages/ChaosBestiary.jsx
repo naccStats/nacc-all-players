@@ -215,6 +215,7 @@ export default function ChaosBestiary() {
         },
         yAxis: {
           type: 'category', data: guildBeastData.map(d => d.name),
+          inverse: true,
           axisLabel: { color: '#EDE0C4', fontSize: pick(9, 10) },
           axisLine: { lineStyle: { color: 'rgba(201,146,11,0.1)' } },
         },

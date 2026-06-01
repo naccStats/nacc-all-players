@@ -1,74 +1,60 @@
 # NACC — Immortal Cultivation Records
 
-> Analytics dashboard for *Nobody's Adventure Chop Chop* (NA server).
+> Analytics dashboard for *Nobody's Adventure Chop Chop* (NA server) — built with a cultivation-realm aesthetic.
 
-🌐 **Live Website:** https://naccstats.github.io/nacc-all-players/
+**Live:** https://naccstats.github.io/nacc-all-players/
 
 ---
 
 ## Overview
 
-A data-driven React analytics platform displaying player and guild statistics parsed from CSV data files.
+A data-driven React analytics platform displaying player and guild statistics parsed from CSV data files. Features a cinematic landing gate, constellation backgrounds, and responsive ECharts visualizations across eight pages.
 
 ---
 
-## Features
+## Pages
 
-| Feature | Description |
+| Page | Description |
 |---|---|
-| 📊 **Dashboard** | Player stats, top 10 cultivators, guild CP rankings, tribulation distribution, CP histogram |
-| 🏆 **Rankings** | Sortable, filterable player table with pagination (30/page) |
-| 🏯 **Guild Analytics** | Guild CP bar & pie charts, expandable guild cards with member breakdown |
-| 📈 **Advanced Stats** | Scatter plots, tribulation avg CP bars, FDU/FDD correlation, composite scores |
-| 🔮 **Visual Insights** | Radar chart for top 10 players, detailed stats for top players, guild avg CP, animated CP leaderboard |
-| ☰ **Collapsible Sidebar** | Desktop collapse/expand; mobile slide-in drawer |
-| 🔍 **Global Search** | Header search with animated dropdown across all players |
-| ⚡ **Dynamic Charts** | All charts auto-update from CSV — no hardcoding |
+| **Dashboard** | Player stats overview, top 10 cultivators, guild CP rankings, tribulation distribution, CP histogram |
+| **Rankings** | Sortable, filterable player table with pagination |
+| **Guild Analytics** | Guild CP bar & pie charts, expandable guild cards with member breakdown and CP comparison |
+| **Guild Comparison** | Side-by-side guild comparison with radar, scatter, and contribution charts |
+| **Advanced Stats** | Scatter plots, tribulation avg CP, FDU/FDD correlation, composite score breakdowns |
+| **Visual Insights** | Radar for top 10 players, animated CP leaderboard, guild average CP, 3D scatter |
+| **Player Profile** | Individual player deep-dive — tribulation tier, CP rank, beast, finals stats, contribution charts |
+| **Chaos Bestiary** | Beast unlock tracker, guild beast army rankings, beast dominance analytics |
+
+---
 
 ## Tech Stack
 
-| Library | Version | Purpose |
-|---|---|---|
-| React | 18 | UI framework |
-| react-router-dom | 6 | Client-side routing (HashRouter) |
-| framer-motion | 10 | Animations & transitions |
-| echarts-for-react | 3 | Charts |
-| lucide-react | 0.400 | Icons |
-| papaparse | 5 | CSV parsing |
+| Library | Purpose |
+|---|---|
+| React 18 | UI framework |
+| react-router-dom 6 | Client-side routing (HashRouter) |
+| framer-motion 10 | Page & element animations |
+| echarts-for-react 3 | Charts |
+| echarts-gl | 3D scatter charts |
+| lucide-react | Icons |
+| papaparse 5 | CSV parsing |
+| constellation.js (vendored) | Particle constellation backgrounds |
 
 ---
 
-## ⚠️ Important: Updating Player Records
+## Updating Player Records
 
-To update the analytics data, CSV files must be re-uploaded:
+### `data/players.csv`
 
----
-
-### 📄 `data/players.csv`
-
-This file should contain **all players and their required information**.
-
-**Requirements:**
-
-* Must be a comma-separated `.csv` file
-* Must contain exactly **12 columns**
-* Columns (in order):
+Contains **all players**. Must be a comma-separated `.csv` with exactly **12 columns** in this order:
 
 ```
 Count, Region, Guild, Player, UID, CP, FDU, FDD, Total Finals, Tribulation, Has Chaos, Updated?
 ```
 
----
+### `data/topPlayer.csv`
 
-### 📄 `data/topPlayer.csv`
-
-This file should contain a **subset of top players with detailed statistics**.
-
-**Requirements:**
-
-* Must be a comma-separated `.csv` file
-* Must contain exactly **15 columns**
-* Columns (in order):
+Contains a **subset of top players** with detailed stats. Must be a comma-separated `.csv` with exactly **15 columns** in this order:
 
 ```
 Guild, Player, UID, CP, Heal Up, Heal Down, Total Heal,
@@ -78,10 +64,11 @@ FDU, FDD, Total Finals, Tribulation, Has Chaos
 
 ---
 
-## ✅ Data Guidelines
+## Data Guidelines
 
-* Files must be properly formatted CSV (comma-separated).
-* No missing columns.
-* No extra columns.
-* Ensure there are no malformed rows or stray characters.
-* Data should be clean and consistent before uploading.
+- Files must be properly formatted CSV (comma-separated).
+- No missing or extra columns.
+- No malformed rows or stray characters.
+- Player names and guild names must be consistent across both files.
+- `Has Chaos` column should contain the beast name or be empty — not `null`/`none`.
+- Guild field: `NoGuild` is treated as unguilded and excluded from guild charts.
