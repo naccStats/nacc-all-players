@@ -9,7 +9,7 @@ import GlassCard from '../components/GlassCard';
 import ChartContainer from '../components/ChartContainer';
 import { FilterSelect } from '../components/FilterBar';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Crown, LayoutGrid, BarChart2, Circle, ZoomIn, ZoomOut, ChevronDown, ChevronUp } from 'lucide-react';
+import { Shield, Crown, LayoutGrid, BarChart2, Circle, ZoomIn, ZoomOut, ChevronDown, ChevronUp, Moon } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import 'echarts-gl';
 
@@ -23,6 +23,7 @@ const PALETTE = [
 /* Named slice limits — change one constant here to resize everywhere */
 const PIE_TOP_N       = 9;
 const BAR_GUILD_LIMIT = 12;
+const AFK_BAR_GUILD_LIMIT = 12;
 const BUBBLE_LIMIT    = 15;
 const TREEMAP_LIMIT   = 20;
 const GUILD_3D_LIMIT  = 8;
@@ -80,6 +81,64 @@ function guildBarChart(guilds, w = 400, hlGuild = '') {
         opacity: p => (hasHl && guilds[p.dataIndex].name !== hlGuild) ? 0.18 : 1,
       },
       emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(212,168,67,0.32)' } },
+    }],
+  };
+}
+
+const AFK_COLOR_DIM = 'rgba(120,110,100,0.12)';
+
+function guildAfkBarChart(guilds, w = 400, hlGuild = '') {
+  if (!guilds?.length) return { series: [] };
+  const { pick } = bp(w);
+  const hasHl = !!hlGuild;
+  return {
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: TB.bg,
+      borderColor: TB.bc,
+      borderWidth: 1,
+      textStyle: { color: '#EDE0C4', fontSize: 11 },
+      formatter: p => {
+        const g = guilds[p[0].dataIndex];
+        return `<b style="color:var(--gold-bright)">${g.name}</b><br/>
+          AFK: <b>${g.afkCount}</b> / ${g.memberCount} members<br/>
+          AFK Rate: <b>${(g.afkRate * 100).toFixed(0)}%</b>`;
+      },
+    },
+    grid: rGrid(w, { top: 10 }),
+    xAxis: {
+      type: 'value',
+      min: 0,
+      max: 1,
+      splitNumber: bp(w).sm ? 3 : 5,
+      axisLine: { lineStyle: { color: SL.color } },
+      axisLabel: { ...rValueLabel(w), color: T.color, formatter: v => `${Math.round(v * 100)}%`, hideOverlap: true },
+      splitLine: { lineStyle: { color: SL.color, type: 'dashed' } },
+    },
+    yAxis: {
+      type: 'category',
+      inverse: true,
+      data: guilds.map(g => g.name),
+      axisLine: { lineStyle: { color: SL.color } },
+      axisLabel: { color: '#EDE0C4', ...rLabel(w, { width: pick(70, 100) }) },
+    },
+    series: [{
+      type: 'bar', data: guilds.map(g => g.afkRate),
+      barWidth: Math.max(4, Math.min(16, Math.round(120 / guilds.length))),
+      itemStyle: {
+        borderRadius: [0, 5, 5, 0],
+        color: p => {
+          const g = guilds[p.dataIndex];
+          const isHl = g.name === hlGuild;
+          if (hasHl && !isHl) return AFK_COLOR_DIM;
+          const alpha = 0.35 + Math.min(g.afkRate, 1) * 0.65;
+          return `rgba(179,58,42,${alpha})`;
+        },
+        shadowBlur: p => (hasHl && guilds[p.dataIndex].name === hlGuild) ? 18 : 0,
+        shadowColor: p => (hasHl && guilds[p.dataIndex].name === hlGuild) ? 'rgba(179,58,42,0.7)' : 'transparent',
+        opacity: p => (hasHl && guilds[p.dataIndex].name !== hlGuild) ? 0.18 : 1,
+      },
+      emphasis: { itemStyle: { shadowBlur: 12, shadowColor: 'rgba(179,58,42,0.32)' } },
     }],
   };
 }
@@ -149,6 +208,7 @@ export default function GuildAnalytics() {
     { value: 'avgFDU',    label: 'Avg FDU' },
     { value: 'avgFDD',    label: 'Avg FDD' },
     { value: 'avgFinals', label: 'Avg Finals' },
+    { value: 'afkRate',   label: 'AFK %' },
   ];
 
   const filtered = useMemo(() => {
@@ -165,6 +225,11 @@ export default function GuildAnalytics() {
 
     return list;
   }, [guildStats, search, sortField, sortDir]);
+
+  const afkSorted = useMemo(
+    () => [...guildStats].sort((a, b) => b.afkRate - a.afkRate).slice(0, AFK_BAR_GUILD_LIMIT),
+    [guildStats]
+  );
 
   const totalCP = guildStats.reduce((s, g) => s + g.totalCP, 0);
 
@@ -417,6 +482,14 @@ export default function GuildAnalytics() {
         </GlassCard>
       </div>
 
+      <GlassCard variant="red">
+        <div className="flex items-center gap-2 mb-2">
+          <Moon size={15} style={{ color: 'var(--cinnabar-bright)' }}/>
+          <h2 className="text-sm font-display font-bold gradient-text">AFK % by Guild</h2>
+        </div>
+        <ChartContainer option={(w) => guildAfkBarChart(afkSorted, w, search)} type="bar" maxHeight={350} />
+      </GlassCard>
+
       <GlassCard>
         {/* Window panel header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, paddingBottom: 10, borderBottom: '1px solid rgba(201,146,11,0.12)' }}>
@@ -533,6 +606,7 @@ export default function GuildAnalytics() {
                 {[
                   { label: 'Avg CP',     val: formatCP(g.avgCP),           color: 'var(--azure-bright)' },
                   { label: 'Chaos',      val: `${g.chaosCount} (${g.chaosRate != null ? (g.chaosRate * 100).toFixed(0) : 0}%)`, color: 'var(--jade-bright)' },
+                  { label: 'AFK',        val: `${g.afkCount} (${g.afkRate != null ? (g.afkRate * 100).toFixed(0) : 0}%)`, color: 'var(--cinnabar-bright)' },
                   { label: 'Avg FDU',    val: g.avgFDU != null ? g.avgFDU.toFixed(1) : '—', color: 'var(--jade-bright)' },
                   { label: 'Avg FDD',    val: g.avgFDD != null ? g.avgFDD.toFixed(1) : '—', color: 'var(--jade-bright)' },
                   { label: 'Avg Finals', val: g.avgFinals != null ? g.avgFinals.toFixed(1) : '—', color: 'var(--gold-bright)' },
