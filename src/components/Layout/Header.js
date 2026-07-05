@@ -175,7 +175,7 @@ const Header = ({ onMenuClick }) => {
                 </div>
 
                 <div className="spp-footer">
-                  {selectedPlayer.updated === 'N' || selectedPlayer.updated === 'NO'
+                  {selectedPlayer.updated === 'N' || selectedPlayer.updated === 'NO' || selectedPlayer.updated === 'AFK'
                     ? <span style={{ color: 'var(--muted)' }}>● AFK</span>
                     : <span style={{ color: '#00E87C'      }}>● Active</span>
                   }

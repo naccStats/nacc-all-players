@@ -172,7 +172,7 @@ export default function PlayerProfile() {
   const tier       = rank ? getTier(pctRank) : 'C';
   const tierColor  = TIER_COLORS[tier];
   const beastColor = BEAST_COLORS[player.chaosBeast] || 'var(--muted)';
-  const isActive   = player.updated !== 'N' && player.updated !== 'NO';
+  const isActive   = player.updated !== 'N' && player.updated !== 'NO' && player.updated !== 'AFK';
   const brandChar  = TRIB_BRAND[getTribPrefix(player.tribulation)] || '仙';
 
   const statBars = [

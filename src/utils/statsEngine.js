@@ -23,7 +23,7 @@ export const computeGlobalStats = (players) => {
   const maxCP = Math.max(...cps);
 
   const chaosCount = players.filter(p => p.hasChaos).length;
-  const activeCount = players.filter(p => p.updated !== 'N' && p.updated !== 'NO').length;
+  const activeCount = players.filter(p => p.updated !== 'N' && p.updated !== 'NO' && p.updated !== 'AFK').length;
   const afkCount = total - activeCount;
 
   const guildMap = {};
