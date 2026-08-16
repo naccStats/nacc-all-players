@@ -27,6 +27,11 @@ const METRIC_COLORS = {
   'Beast Down': '#B026FF',
 };
 
+/* Divine Lakshana badge — single color/glyph, no per-name breakdown */
+const DIVINE_COLOR = '#F4C95D';
+const DIVINE_GLYPH = '✨';
+const isDivine = v => v && v !== 'N' && v !== 'NO' && v !== '';
+
 export default function VisualInsights() {
   const rawPlayers = useContext(PlayerContext);
   const players = useMemo(() => rawPlayers || [], [rawPlayers]);
@@ -75,6 +80,7 @@ export default function VisualInsights() {
         guild: normalizeGuild(row.Guild),
         trib: (row.Tribulation || '').toString().trim(),
         hasChaos: (row['Has Chaos'] || '').toString().trim(),
+        divine: (row['Has Divine'] || '').toString().trim(),
         raw: {
           cp:         n('CP'),
           healUp:     n('Heal Up'),
@@ -112,6 +118,7 @@ export default function VisualInsights() {
         guild:      (() => { const g = (row.Guild || '').toString().trim(); return g.toLowerCase() === 'noguild' ? '' : g; })(),
         trib:       (row.Tribulation || '').toString().trim(),
         hasChaos:   (row['Has Chaos'] || '').toString().trim(),
+        divine:     (row['Has Divine'] || '').toString().trim(),
         cp:         num(row, 'CP'),
         healUp:     num(row, 'Heal Up'),
         healDown:   num(row, 'Heal Down'),
@@ -176,12 +183,14 @@ export default function VisualInsights() {
             {topPlayerRows.map((p, i) => {
               const tc = tribColor(p.trib);
               const hasC = p.hasChaos && p.hasChaos !== 'N' && p.hasChaos !== 'NO' && p.hasChaos !== '';
+              const hasD = isDivine(p.divine);
               return (
                 <div key={i} className="cultivator-row" style={{
-                  border: '1px solid rgba(201,146,11,0.12)',
+                  border: hasD ? `1px solid ${DIVINE_COLOR}55` : '1px solid rgba(201,146,11,0.12)',
+                  boxShadow: hasD ? `0 0 12px ${DIVINE_COLOR}30` : 'none',
                   padding: '8px 10px',
                 }}>
-                  {/* Row 1: rank + name + trib + chaos */}
+                  {/* Row 1: rank + name + trib + chaos + divine */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                     <span style={{
                       width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -193,6 +202,7 @@ export default function VisualInsights() {
                     <span style={{ fontWeight: 600, fontSize: 11, color: '#EDE0C4', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.player}</span>
                     <span style={{ fontSize: 9, color: tc, fontWeight: 600, flexShrink: 0 }}>{tribLabel(p.trib) || p.trib}</span>
                     {hasC && <span style={{ fontSize: 9, color: '#CB4335', flexShrink: 0 }}>⚡{p.hasChaos}</span>}
+                    {hasD && <span style={{ fontSize: 9, color: DIVINE_COLOR, fontWeight: 700, flexShrink: 0, textShadow: `0 0 6px ${DIVINE_COLOR}88` }}>{DIVINE_GLYPH}{p.divine}</span>}
                   </div>
                   {/* Row 2: stat grid 4 cols */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '3px 6px' }}>
@@ -623,6 +633,7 @@ function SvgRadar({ data }) {
             const color = RC[hovered % RC.length];
             const raw = d.raw;
             const hasC = d.hasChaos && d.hasChaos !== 'N' && d.hasChaos !== 'NO' && d.hasChaos !== '';
+            const hasD = isDivine(d.divine);
             const isMobile = popoverPos.mobile;
             return (
               <motion.div
@@ -636,10 +647,10 @@ function SvgRadar({ data }) {
                   bottom: 16, left: 8, right: 8,
                   zIndex: 9999,
                   background: 'rgba(8,4,18,0.97)',
-                  border: `1px solid ${color}55`,
+                  border: hasD ? `1px solid ${DIVINE_COLOR}70` : `1px solid ${color}55`,
                   borderRadius: 12,
                   padding: '14px 16px',
-                  boxShadow: `0 -4px 32px rgba(0,0,0,0.7), 0 0 16px ${color}22`,
+                  boxShadow: hasD ? `0 -4px 32px rgba(0,0,0,0.7), 0 0 16px ${color}22, 0 0 18px ${DIVINE_COLOR}40` : `0 -4px 32px rgba(0,0,0,0.7), 0 0 16px ${color}22`,
                 } : {
                   position: 'fixed',
                   top: popoverPos.top,
@@ -647,10 +658,10 @@ function SvgRadar({ data }) {
                   width: POPOVER_W,
                   zIndex: 9999,
                   background: 'rgba(8,4,18,0.97)',
-                  border: `1px solid ${color}55`,
+                  border: hasD ? `1px solid ${DIVINE_COLOR}70` : `1px solid ${color}55`,
                   borderRadius: 10,
                   padding: '11px 13px',
-                  boxShadow: `0 8px 32px rgba(0,0,0,0.7), 0 0 14px ${color}22`,
+                  boxShadow: hasD ? `0 8px 32px rgba(0,0,0,0.7), 0 0 14px ${color}22, 0 0 16px ${DIVINE_COLOR}40` : `0 8px 32px rgba(0,0,0,0.7), 0 0 14px ${color}22`,
                   pointerEvents: 'none',
                 }}
               >
@@ -660,7 +671,8 @@ function SvgRadar({ data }) {
                     <div style={{ fontFamily: 'var(--font-title)', fontSize: 13, fontWeight: 700, color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 160 }}>{d.name}</div>
                     <div style={{ fontSize: 10, color: 'var(--muted)', marginTop: 2 }}>
                       {d.guild || '—'} · <span style={{ color: tribColor(d.trib) }}>{tribLabel(d.trib) || d.trib}</span>
-                      {hasC && <span style={{ color: '#CB4335', marginLeft: 5 }}>⚡ {d.hasChaos}</span>}
+                      {hasC && <span style={{ color: '#CB4335', marginLeft: 5, whiteSpace: 'nowrap' }}>⚡ {d.hasChaos}</span>}
+                      {hasD && <span style={{ color: DIVINE_COLOR, marginLeft: 5, fontWeight: 700, whiteSpace: 'nowrap', textShadow: `0 0 6px ${DIVINE_COLOR}88` }}>{DIVINE_GLYPH} {d.divine}</span>}
                     </div>
                   </div>
                   <div style={{ fontSize: 14, fontWeight: 700, color: '#D4A843', flexShrink: 0, marginLeft: 8 }}>

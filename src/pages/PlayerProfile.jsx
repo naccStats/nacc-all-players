@@ -17,6 +17,10 @@ const BEAST_COLORS = { Luohou: '#CB4335', Kunpeng: '#2E9BE5', Diting: '#9B59B6',
 const TIER_COLORS  = { SS: '#D4A843', S: '#CB4335', A: '#9B59B6', B: '#2E9BE5', C: '#7D7263' };
 const AXES_6 = ['Heal↑', 'Heal↓', 'FDU', 'FDD', 'Beast↑', 'Beast↓'];
 
+/* Divine Lakshana badge — single color/glyph, no per-name breakdown */
+const DIVINE_COLOR = '#F4C95D';
+const DIVINE_GLYPH = '✨';
+
 const TRIB_BRAND = {
   DG: '神', SM: '霸', CE: '帝', CK: '王', DL: '主',
   GI: '金', SI: '太', CI: '天', TI: '真', GA: '升',
@@ -118,8 +122,12 @@ export default function PlayerProfile() {
       num(row, 'FDU'), num(row, 'FDD'), num(row, 'Beast Up'), num(row, 'Beast Down'),
     ];
     const maxV = Math.max(...vals, 1);
+    const divineRaw = (row['Has Divine'] || '').toString().trim();
+    const hasDivine = divineRaw && divineRaw !== 'N' && divineRaw !== 'NO';
     return {
       normalized: vals.map(v => v / maxV),
+      hasDivine,
+      divineLakshana: hasDivine ? divineRaw : null,
       raw: {
         healUp:     num(row, 'Heal Up'),
         healDown:   num(row, 'Heal Down'),
@@ -218,6 +226,12 @@ export default function PlayerProfile() {
             className="profile-aura"
             style={{ background: `radial-gradient(ellipse 80% 70% at 25% 50%, ${tc}22 0%, transparent 68%)` }}
           />
+          {topData?.hasDivine && (
+            <div
+              className="profile-aura"
+              style={{ background: `radial-gradient(ellipse 65% 60% at 75% 40%, ${DIVINE_COLOR}28 0%, transparent 70%)` }}
+            />
+          )}
         </div>
 
         {/* Tribulation brand watermark */}
@@ -264,6 +278,15 @@ export default function PlayerProfile() {
                     background: `${beastColor}20`, border: `1px solid ${beastColor}50`, color: beastColor,
                   }}>
                     ⚡ {player.chaosBeast}
+                  </span>
+                )}
+                {topData?.hasDivine && (
+                  <span style={{
+                    padding: '2px 9px', borderRadius: 20, fontSize: 9, fontWeight: 700,
+                    background: `${DIVINE_COLOR}28`, border: `1px solid ${DIVINE_COLOR}70`, color: DIVINE_COLOR,
+                    boxShadow: `0 0 10px ${DIVINE_COLOR}45`,
+                  }}>
+                    {DIVINE_GLYPH} {topData.divineLakshana}
                   </span>
                 )}
                 <span style={{
@@ -423,6 +446,7 @@ export default function PlayerProfile() {
                 { label: 'Finals Dmg Dn', val: player.fdd != null ? player.fdd.toFixed(1) : '—',              color: '#FF8C42' },
                 { label: 'Total Finals',  val: player.totalFinals != null ? player.totalFinals.toFixed(1) : '—', color: '#2E9BE5' },
                 { label: 'Chaos Beast',   val: player.chaosBeast || 'None',                                   color: beastColor },
+                { label: 'Divine Lakshana', val: topData ? (topData.divineLakshana || 'None') : '—',          color: topData?.hasDivine ? DIVINE_COLOR : 'var(--muted)' },
               ].map(({ label, val, color }) => (
                 <div key={label} style={{
                   padding: '10px 12px', background: 'rgba(0,0,0,0.2)', borderRadius: 10,
