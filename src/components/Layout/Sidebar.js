@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDataContext } from '../../context/DataContext';
 import { formatTime } from '../../utils/formatters';
+import { DATA_UPDATED_AS_OF } from '../../constants/site';
 import { ChevronLeft } from 'lucide-react';
 import {
   GiMeditation, GiTrophyCup, GiDragonOrb, GiCrystalBall,
@@ -147,11 +148,17 @@ const Sidebar = ({ isOpen, onClose, collapsed, onToggleCollapse }) => {
 
       {/* Freshness indicator */}
       <div className="sidebar-freshness">
-        <span className="sidebar-freshness-dot" />
-        <span className="sidebar-freshness-text">Synced</span>
-        <span className="sidebar-freshness-time">
-          {lastUpdated ? formatTime(lastUpdated) : '—'}
-        </span>
+        <div className="sidebar-freshness-row">
+          <span className="sidebar-freshness-dot" />
+          <span className="sidebar-freshness-text">Synced</span>
+          <span className="sidebar-freshness-time">
+            {lastUpdated ? formatTime(lastUpdated) : '—'}
+          </span>
+        </div>
+        <div className="sidebar-freshness-row">
+          <span className="sidebar-freshness-text">Updated as of</span>
+          <span className="sidebar-freshness-updated">{DATA_UPDATED_AS_OF}</span>
+        </div>
       </div>
 
       {/* Footer */}

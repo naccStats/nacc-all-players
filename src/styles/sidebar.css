@@ -245,12 +245,18 @@
   padding: 7px 16px 9px;
   border-top: 1px solid rgba(201,151,58,0.08);
   display: flex;
-  align-items: center;
-  gap: 7px;
+  flex-direction: column;
+  gap: 4px;
   overflow: hidden;
   white-space: nowrap;
   flex-shrink: 0;
   transition: opacity 0.2s;
+}
+
+.sidebar-freshness-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .sidebar.sidebar--collapsed .sidebar-freshness {
@@ -279,6 +285,14 @@
   color: var(--jade-bright);
   font-weight: 600;
   letter-spacing: 0.06em;
+}
+
+.sidebar-freshness-updated {
+  font-size: 8px;
+  color: var(--gold-bright);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  animation: text-glow-pulse 2.4s ease-in-out infinite;
 }
 
 /* Energy qi dot on active nav item */

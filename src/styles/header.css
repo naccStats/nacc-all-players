@@ -66,6 +66,12 @@
 
 .divider { color: rgba(201,146,11,0.3); }
 
+.updated-as-of-date {
+  color: var(--gold-bright);
+  font-weight: 600;
+  animation: text-glow-pulse 2.4s ease-in-out infinite;
+}
+
 .header-right {
   display: flex;
   align-items: center;

@@ -77,7 +77,7 @@ const Header = ({ onMenuClick }) => {
           <span className="divider">·</span>
           <span>Synced: {lastUpdated ? formatTime(lastUpdated) : '—'}</span>
           <span className="divider">·</span>
-          <span>Updated as of: {DATA_UPDATED_AS_OF}</span>
+          <span>Updated as of: <span className="updated-as-of-date">{DATA_UPDATED_AS_OF}</span></span>
           <span className="divider">·</span>
           <span>{(players || []).length} Cultivators</span>
         </div>
