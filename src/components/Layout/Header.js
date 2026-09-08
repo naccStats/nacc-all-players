@@ -6,6 +6,7 @@ import { tribColor, tribLabel } from '../../utils/tribulationSystem';
 import { useDebounce } from '../../hooks/useDebounce';
 import { Menu, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { DATA_UPDATED_AS_OF } from '../../constants/site';
 
 const Header = ({ onMenuClick }) => {
   const { lastUpdated, players } = useDataContext();
@@ -75,6 +76,8 @@ const Header = ({ onMenuClick }) => {
           <span>Records Channeled</span>
           <span className="divider">·</span>
           <span>Synced: {lastUpdated ? formatTime(lastUpdated) : '—'}</span>
+          <span className="divider">·</span>
+          <span>Updated as of: {DATA_UPDATED_AS_OF}</span>
           <span className="divider">·</span>
           <span>{(players || []).length} Cultivators</span>
         </div>
