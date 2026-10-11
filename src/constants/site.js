@@ -1,2 +1,2 @@
 // Hardcoded values that need occasional manual updates.
-export const DATA_UPDATED_AS_OF = '09-06-2026';
+export const DATA_UPDATED_AS_OF = '10-11-2026';
