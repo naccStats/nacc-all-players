@@ -1,50 +1,57 @@
-# NACC — Immortal Cultivation Records
+# NACC player and guild rankings
 
-> Analytics dashboard for *Nobody's Adventure Chop Chop* (NA server) — built with a cultivation-realm aesthetic.
+Player and guild stats for *Nobody's Adventure Chop Chop* (NA region), read from two CSV files.
 
 **Live:** https://naccstats.github.io/nacc-all-players/
 
 ---
 
-## Overview
+## Structure
 
-A data-driven React analytics platform displaying player and guild statistics parsed from CSV data files. Features a cinematic landing gate, constellation backgrounds, and responsive ECharts visualizations across eight pages.
+| Path | What it is |
+|---|---|
+| `index.html`, `home/render.mjs` | Home page. Static HTML; every figure, table and drawn screen on it is written from `public/data/*.csv` at build time |
+| `app/index.html`, `src/` | React app with the analytics pages, served at `/app/` (HashRouter) |
+| `public/assets/` | Design kit used by the home page (tasteskill). Do not edit; page CSS lives in `index.html` |
+| `public/home/` | The ink paintings on the home page |
+| `src/data-date.js` | The "As of" date shown on every page. Change it with each data update |
+| `src/brand/` | The animated logo, guild crests, medals and tier gems, shared by both parts |
+| `src/styles/app.css`, `src/utils/chartTheme.js` | Colours, type and chart styling of the app |
 
----
+Links from before the move (`/#/rankings`, `/#/player/<uid>`) redirect to the same page under `/app/`.
 
 ## Pages
 
-| Page | Description |
-|---|---|
-| **Dashboard** | Player stats overview, top 10 cultivators, guild CP rankings, tribulation distribution, CP histogram |
-| **Rankings** | Sortable, filterable player table with pagination |
-| **Guild Analytics** | Guild CP bar & pie charts, expandable guild cards with member breakdown and CP comparison |
-| **Guild Comparison** | Side-by-side guild comparison with radar, scatter, and contribution charts |
-| **Advanced Stats** | Scatter plots, tribulation avg CP, FDU/FDD correlation, composite score breakdowns |
-| **Visual Insights** | Radar for top 10 players, animated CP leaderboard, guild average CP, 3D scatter |
-| **Player Profile** | Individual player deep-dive — tribulation tier, CP rank, beast, finals stats, contribution charts |
-| **Chaos Bestiary** | Beast unlock tracker, guild beast army rankings, beast dominance analytics |
+| Page | Route | Description |
+|---|---|---|
+| **Overview** | `#/` | Server totals, rank lookup, top 10, tiers, guild power, power spread |
+| **Players** | `#/rankings` | Sortable, filterable player table with CSV download |
+| **Guilds** | `#/guilds` | Power and share, players by tier, roster, average power against size |
+| **Compare** | `#/compare?a=&b=` | Two guilds side by side with a score; the link keeps the choice |
+| **Beasts** | `#/bestiary` | Chaos beast owners, their power, beasts by guild |
+| **Insights** | `#/insights` | Top 10 radar, every stat of the top players, healers and fighters |
+| **Advanced** | `#/advanced` | CP to rank, 3D scatter, FDU and FDD, tier ranges, composite score |
+| **Player** | `#/player/<uid>` | One player against the region |
 
----
+## Commands
 
-## Tech Stack
+```bash
+npm start        # dev server
+npm run build    # production build in dist/
+npm run deploy   # build and publish to GitHub Pages
+```
 
-| Library | Purpose |
-|---|---|
-| React 18 | UI framework |
-| react-router-dom 6 | Client-side routing (HashRouter) |
-| framer-motion 10 | Page & element animations |
-| echarts-for-react 3 | Charts |
-| echarts-gl | 3D scatter charts |
-| lucide-react | Icons |
-| papaparse 5 | CSV parsing |
-| constellation.js (vendored) | Particle constellation backgrounds |
+Built with Vite, React 18, react-router-dom, ECharts and echarts-gl, lucide-react and Papa Parse.
 
 ---
 
 ## Updating Player Records
 
-### `data/players.csv`
+1. Replace the files in `public/data/`.
+2. Set the date in **`src/data-date.js`** (`DATA_AS_OF`). It is shown exactly as written on every page.
+3. `npm run deploy`.
+
+### `public/data/players.csv`
 
 Contains **all players**. Must be a comma-separated `.csv` with exactly **12 columns** in this order:
 
@@ -52,7 +59,7 @@ Contains **all players**. Must be a comma-separated `.csv` with exactly **12 col
 Count, Region, Guild, Player, UID, CP, FDU, FDD, Total Finals, Tribulation, Has Chaos, Updated?
 ```
 
-### `data/topPlayer.csv`
+### `public/data/topPlayers.csv`
 
 Contains a **subset of top players** with detailed stats. Must be a comma-separated `.csv` with exactly **15 columns** in this order:
 
@@ -70,5 +77,6 @@ FDU, FDD, Total Finals, Tribulation, Has Chaos
 - No missing or extra columns.
 - No malformed rows or stray characters.
 - Player names and guild names must be consistent across both files.
+- `Updated?` is `Y` for an active player and `AFK` for an inactive one.
 - `Has Chaos` column should contain the beast name or be empty — not `null`/`none`.
-- Guild field: `NoGuild` is treated as unguilded and excluded from guild charts.
+- Guild field: `NoGuild` or `No Guild` is treated as unguilded and excluded from guild charts.

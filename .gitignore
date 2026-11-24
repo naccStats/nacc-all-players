@@ -1,5 +1,6 @@
-# dependencies
-./node_modules/
+node_modules/
+dist/
+build/
 
-# build output
-./build/
+# design skill working files
+.taste-skill/

@@ -1,0 +1,52 @@
+/* The logo's motion and the look of the marks in glyphs.js. Shared by the app and the home page. */
+
+/* Logo: the ring is painted, the lotus opens petal by petal, the pearl circles it. It plays once on load (and
+   on each page change in the app) and again on hover, then rests, so nothing keeps moving beside the text. */
+.logo-mark { display: block; width: 38px; height: 38px; overflow: visible; flex: none; }
+.logo-mark__draw { stroke-dasharray: 100; stroke-dashoffset: 0; }
+.logo-mark__petal { transform-origin: 24px 35.5px; transform: rotate(var(--a)); }
+.logo-mark__lotus { transform-origin: 24px 36px; }
+.logo-mark__orbit { transform-origin: 24px 24px; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .logo-mark__draw { animation: logo-draw 1.3s cubic-bezier(.45, .05, .2, 1) both; }
+  .logo-mark__petal { animation: logo-open 1.5s .7s cubic-bezier(.22, 1, .36, 1) both; }
+  .logo-mark__lotus { animation: logo-rise .8s .6s ease-out both, logo-breathe 1.5s 2.2s ease-in-out 2; }
+  .logo-mark__orbit { animation: logo-orbit 3.4s .5s cubic-bezier(.3, .1, .15, 1) both; }
+  a:hover .logo-mark .logo-mark__draw { animation: logo-draw-2 1.1s cubic-bezier(.45, .05, .2, 1) both; }
+  a:hover .logo-mark .logo-mark__petal { animation: logo-open-2 1.5s .1s cubic-bezier(.22, 1, .36, 1) both; }
+  a:hover .logo-mark .logo-mark__lotus { animation: logo-breathe-2 1.4s 1.4s ease-in-out 2; }
+  a:hover .logo-mark .logo-mark__orbit { animation: logo-orbit-2 2.6s cubic-bezier(.3, .1, .15, 1) both; }
+}
+/* with system animations off: the ring is painted and the lotus fades in, nothing turns or travels */
+@media (prefers-reduced-motion: reduce) {
+  .logo-mark .logo-mark__draw { animation: logo-draw 1.4s ease-out both !important; }
+  .logo-mark .logo-mark__petal { animation: logo-fade .9s .6s ease-out both !important; }
+  .logo-mark .logo-mark__petal:nth-child(1), .logo-mark .logo-mark__petal:nth-child(2) { animation-delay: 1.2s !important; }
+  .logo-mark .logo-mark__petal:nth-child(3), .logo-mark .logo-mark__petal:nth-child(4) { animation-delay: .9s !important; }
+  a:hover .logo-mark .logo-mark__draw { animation-name: logo-draw-2 !important; }
+  a:hover .logo-mark .logo-mark__petal { animation-name: logo-fade-2 !important; }
+}
+@keyframes logo-draw { from { stroke-dashoffset: 100; } }
+@keyframes logo-draw-2 { from { stroke-dashoffset: 100; } }
+@keyframes logo-fade { from { opacity: 0; } }
+@keyframes logo-fade-2 { from { opacity: 0; } }
+@keyframes logo-open { from { transform: rotate(0deg) scale(.6); } }
+@keyframes logo-open-2 { from { transform: rotate(0deg) scale(.75); } }
+@keyframes logo-rise { from { opacity: 0; transform: translateY(4px) scale(.7); } }
+@keyframes logo-breathe { 50% { transform: scale(1.07); } }
+@keyframes logo-breathe-2 { 50% { transform: scale(1.09); } }
+@keyframes logo-orbit { from { transform: rotate(-560deg); opacity: 0; } 12% { opacity: 1; } }
+@keyframes logo-orbit-2 { from { transform: rotate(-720deg); } }
+
+/* Marks */
+.crest, .medal, .gem, .beast-sign { flex: none; display: block; }
+.rank-no { font: 500 19px/1 Spectral, Georgia, serif; color: #a39d95; font-variant-numeric: lining-nums tabular-nums; }
+.tier { --t: #c9a45a; display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px 0 9px; border-radius: 99px; white-space: nowrap; font-size: 14px; color: color-mix(in oklab, var(--t) 55%, #fff); background: color-mix(in oklab, var(--t) 11%, transparent); box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--t) 28%, transparent); }
+.tier .gem { width: 14px; height: 14px; }
+.cp { display: inline-grid; gap: 5px; justify-items: end; font: 500 21px/1 Spectral, Georgia, serif; color: #fff; font-variant-numeric: lining-nums tabular-nums; }
+.cp small, td .cp small, .podium__foot .cp small { display: inline; margin: 0 0 0 2px; font: 500 .68em/1 Spectral, Georgia, serif; color: #d8b873; }
+.cp > i { display: block; width: 88px; height: 3px; border-radius: 2px; background: rgb(255 255 255 / .08); }
+.cp > i > b { display: block; height: 100%; border-radius: 2px; background: linear-gradient(90deg, #8a6528, #f0d592); }
+.asof { display: inline-flex; align-items: center; gap: 9px; font-size: 14px; line-height: 1.4; color: #d8b873; }
+.asof::before { content: ""; width: 7px; height: 7px; background: currentColor; transform: rotate(45deg); }

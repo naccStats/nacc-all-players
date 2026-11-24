@@ -1,3 +1,40 @@
+import { normalizeGuild } from './formatters.js';
+
+/* The sheet marks an inactive player "AFK" (older exports: "N" or "NO"); anything else is active. */
+export const isActive = (p) => !['AFK', 'N', 'NO'].includes(p.updated);
+
+const toNumber = (v) => {
+  const n = Number(v);
+  return v === null || v === undefined || v === '' || isNaN(n) ? 0 : n;
+};
+
+/* One CSV row to one player, or null when the row has no name, UID or combat power. */
+export const parsePlayer = (row) => {
+  const player = (row.Player || '').toString().trim();
+  const uid = row.UID ? String(row.UID).trim() : null;
+  const cp = toNumber(row.CP);
+  if (!player || !uid || cp <= 0) return null;
+  const chaos = (row['Has Chaos'] || '').toString().trim();
+  const hasChaos = !['', 'N', 'NO'].includes(chaos.toUpperCase());
+  return {
+    uid, player, cp, hasChaos,
+    region: (row.Region || 'NA').toString().trim(),
+    guild: normalizeGuild(row.Guild),
+    fdu: toNumber(row.FDU),
+    fdd: toNumber(row.FDD),
+    totalFinals: toNumber(row['Total Finals']),
+    tribulation: (row.Tribulation || '').toString().trim().toUpperCase(),
+    // "Y" says the player has a beast but not which one
+    chaosBeast: hasChaos && !['Y', 'YES'].includes(chaos.toUpperCase()) ? chaos : null,
+    updated: (row['Updated?'] || '').toString().trim().toUpperCase(),
+  };
+};
+
+export const parsePlayers = (rows) => {
+  const seen = new Set();
+  return rows.map(parsePlayer).filter((p) => p && !seen.has(p.uid) && seen.add(p.uid));
+};
+
 export const TOP_GUILDS_LIMIT  = 20;
 export const TOP_PLAYERS_LIMIT = 20;
 
@@ -23,7 +60,7 @@ export const computeGlobalStats = (players) => {
   const maxCP = Math.max(...cps);
 
   const chaosCount = players.filter(p => p.hasChaos).length;
-  const activeCount = players.filter(p => p.updated !== 'N' && p.updated !== 'NO' && p.updated !== 'AFK').length;
+  const activeCount = players.filter(isActive).length;
   const afkCount = total - activeCount;
 
   const guildMap = {};
@@ -79,7 +116,6 @@ export const computeGuildStats = (players) => {
         members: [],
         totalCP: 0,
         chaosCount: 0,
-        afkCount: 0,
         sumFDU: 0, countFDU: 0,
         sumFDD: 0, countFDD: 0,
         sumFinals: 0, countFinals: 0,
@@ -91,7 +127,6 @@ export const computeGuildStats = (players) => {
     guildData.members.push(p);
     guildData.totalCP += p.cp || 0;
     if (p.hasChaos) guildData.chaosCount++;
-    if (p.updated === 'N' || p.updated === 'NO' || p.updated === 'AFK') guildData.afkCount++;
     if (p.fdu > 0)         { guildData.sumFDU   += p.fdu;         guildData.countFDU++;    }
     if (p.fdd > 0)         { guildData.sumFDD   += p.fdd;         guildData.countFDD++;    }
     if (p.totalFinals > 0) { guildData.sumFinals += p.totalFinals; guildData.countFinals++; }
@@ -109,8 +144,6 @@ export const computeGuildStats = (players) => {
       avgCP: g.totalCP / n,
       chaosCount: g.chaosCount,
       chaosRate: g.chaosCount / n,
-      afkCount: g.afkCount,
-      afkRate: g.afkCount / n,
       avgFDU:    g.countFDU    > 0 ? g.sumFDU    / g.countFDU    : 0,
       avgFDD:    g.countFDD    > 0 ? g.sumFDD    / g.countFDD    : 0,
       avgFinals: g.countFinals > 0 ? g.sumFinals / g.countFinals : 0,

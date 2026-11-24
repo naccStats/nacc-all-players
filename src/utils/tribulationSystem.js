@@ -84,27 +84,16 @@ export const tribRank = (t) => {
 };
 
 /**
- * Returns a hex color for a tribulation string.
- * Color is determined by tier only (sub-rank doesn't affect color).
+ * Returns the colour of a tribulation string. The tiers are an order, so the colours are one ramp:
+ * the stronger the tier, the lighter the gold. The sub-rank does not change it.
  */
+const TIER_RAMP = [
+  '#57503f', '#5f5643', '#685d46', '#716449', '#7a6b4b', '#83724c', '#8c784d', '#957e4c',
+  '#9f854c', '#a98c4e', '#b59553', '#c9a45a', '#d8b973', '#e8d097', '#faecc8',
+];
 export const tribColor = (t) => {
-  const r = Math.floor(tribRank(t)); // floor so CK2 (12.333) → 12
-  if (r >= 15) return '#D4A843'; // DG  — Imperial Gold
-  if (r >= 14) return '#CB4335'; // SM  — Dragon Vermillion
-  if (r >= 13) return '#D4813A'; // CE  — Celestial Amber
-  if (r >= 12) return '#B03A8E'; // CK  — Mystic Rose
-  if (r >= 11) return '#9B59B6'; // DL  — Amethyst
-  if (r >= 10) return '#2E9BE5'; // GI  — Royal Sapphire
-  if (r >= 9)  return '#1EBD82'; // SI  — Jade
-  if (r >= 8)  return '#17A272'; // CI  — Deep Jade
-  if (r >= 7)  return '#5D7FC2'; // TI  — Cornflower Blue
-  if (r >= 6)  return '#A07830'; // GA  — Burnished Bronze
-  if (r >= 5)  return '#7A5C3A'; // BI  — Dark Leather
-  if (r >= 4)  return '#6B8FAD'; // VT  — Periwinkle Steel
-  if (r >= 3)  return '#4FA89A'; // T   — Patina Teal
-  if (r >= 2)  return '#4A7FA8'; // NS  — Steel Blue
-  if (r >= 1)  return '#4A5568'; // QR  — Slate
-  return '#2D2040';              // Unknown
+  const r = Math.floor(tribRank(t));
+  return r >= 1 ? TIER_RAMP[r - 1] : '#3a362f';
 };
 
 /**
@@ -117,4 +106,13 @@ export const tribLabel = (t) => {
   if (!p) return String(t);
   const name = TRIB_NAMES[p.base] || String(t);
   return p.sub > 0 ? `${name} ${p.sub}` : name;
+};
+
+/** The tier prefix alone: "CK2" gives "CK". Null when the value is not a known tier. */
+export const tribPrefix = (t) => parseTrib(t)?.prefix ?? null;
+
+/** The tier's name alone: "CK2" gives "Celestial King". */
+export const tribName = (t) => {
+  const p = parseTrib(t);
+  return p ? TRIB_NAMES[p.base] : 'Unknown';
 };

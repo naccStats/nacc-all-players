@@ -58,9 +58,13 @@ export const formatCPShort = (raw) => {
     return n.toFixed(decimals) + '%';
   };
 
+/** "NoGuild", "No Guild" and blanks all mean unguilded: an empty string. */
 export function normalizeGuild(raw) {
-  if (!raw) return '';
-  const g = String(raw).trim();
-  return g.toLowerCase() === 'noguild' ? '' : g;
+  const g = String(raw ?? '').trim();
+  return g.replace(/\s+/g, '').toLowerCase() === 'noguild' ? '' : g;
 }
-  
+
+export const formatInt = (n) => Math.round(n || 0).toLocaleString('en-US');
+
+export const formatStat = (n) =>
+  n > 0 ? n.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '-';
