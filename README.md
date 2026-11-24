@@ -38,7 +38,6 @@ Links from before the move (`/#/rankings`, `/#/player/<uid>`) redirect to the sa
 ```bash
 npm start        # dev server
 npm run build    # production build in dist/
-npm run deploy   # build and publish to GitHub Pages
 ```
 
 Built with Vite, React 18, react-router-dom, ECharts and echarts-gl, lucide-react and Papa Parse.
@@ -49,7 +48,7 @@ Built with Vite, React 18, react-router-dom, ECharts and echarts-gl, lucide-reac
 
 1. Replace the files in `public/data/`.
 2. Set the date in **`src/data-date.js`** (`DATA_AS_OF`). It is shown exactly as written on every page.
-3. `npm run deploy`.
+3. Commit and push to `main`. The GitHub Actions workflow builds the site and publishes it.
 
 ### `public/data/players.csv`
 
