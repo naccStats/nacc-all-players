@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import 'echarts-gl';
 import { usePlayers } from '../context/DataContext';
@@ -49,9 +49,10 @@ function analyse(players) {
   };
 }
 
-function scatter3D(players, zoom, hits) {
+function scatter3D(players, zoom, hits, w) {
+  const narrow = isNarrow(w);
   const axis = (name, extra = {}) => ({
-    name, nameTextStyle: { color: C.soft, fontSize: 13, fontFamily: FONT },
+    name, nameGap: narrow ? 30 : 20, splitNumber: narrow ? 2 : 5, nameTextStyle: { color: C.soft, fontSize: 13, fontFamily: FONT },
     axisLabel: { color: C.muted, fontSize: 12, fontFamily: FONT, ...extra },
     axisLine: { lineStyle: { color: 'rgba(255,255,255,0.24)' } },
     splitLine: { lineStyle: { color: 'rgba(255,255,255,0.07)' } },
@@ -71,8 +72,8 @@ function scatter3D(players, zoom, hits) {
       axisPointer: { lineStyle: { color: C.accent, width: 1 } },
     },
     xAxis3D: axis('Finals'),
-    yAxis3D: axis('CP', { formatter: formatCPShort }),
-    zAxis3D: axis('FDU'),
+    yAxis3D: axis('CP', { formatter: (v) => (v ? formatCPShort(v) : '0') }),
+    zAxis3D: { ...axis('FDU'), ...(narrow && { nameGap: 38 }) },
     series: [
       {
         type: 'scatter3D', symbolSize: 6,
@@ -85,10 +86,10 @@ function scatter3D(players, zoom, hits) {
   };
 }
 
-const fduFdd = (players) => ({
+const fduFdd = (players) => (w) => ({
   tooltip: tooltip({ formatter: (p) => tip(p.value[2], [['FDU', formatStat(p.value[0])], ['FDD', formatStat(p.value[1])]]) }),
-  grid: grid({ bottom: 30, left: 28 }),
-  xAxis: valueAxis({ name: 'FDU', nameGap: 34 }),
+  grid: grid({ bottom: 30, left: 28, right: 24 }),
+  xAxis: valueAxis({ name: 'FDU', nameGap: 34, splitNumber: isNarrow(w) ? 3 : 5 }),
   yAxis: valueAxis({ name: 'FDD', nameGap: 48 }),
   series: [{
     type: 'scatter', symbolSize: 8, data: players.map((p) => [p.fdu, p.fdd, p.player]),
@@ -96,7 +97,7 @@ const fduFdd = (players) => ({
   }],
 });
 
-const boxPlot = (tiers) => ({
+const boxPlot = (tiers) => (w) => ({
   tooltip: tooltip({
     trigger: 'item',
     formatter: (p) => {
@@ -109,7 +110,7 @@ const boxPlot = (tiers) => ({
     },
   }),
   grid: grid({ right: 4 }),
-  xAxis: catAxis(tiers.map((t) => t.tier), { axisLabel: { interval: 0, hideOverlap: false } }),
+  xAxis: catAxis(tiers.map((t) => t.tier), { axisLabel: { interval: 0, hideOverlap: false, fontSize: isNarrow(w) ? 11 : 13 } }),
   yAxis: valueAxis({ type: 'log', axisLabel: { formatter: formatCPShort } }),
   series: [{
     type: 'boxplot', data: tiers.map((t) => t.box), boxWidth: [8, 28],
@@ -135,7 +136,7 @@ const heatmap = ({ bins, ru, rd, data }) => (w) => {
 export default function Advanced() {
   const players = usePlayers();
   const d = useMemo(() => analyse(players), [players]);
-  const [zoom, setZoom] = useState(() => (window.innerWidth < 640 ? 46 : 60));
+  const [zoom, setZoom] = useState(() => (window.innerWidth < 640 ? 36 : 60));
   const [find, setFind] = useState('');
   const [cp, setCp] = useState('');
 
@@ -145,7 +146,7 @@ export default function Advanced() {
     const exact = players.find((p) => p.uid === q);
     return exact ? [exact] : players.filter((p) => p.player.toLowerCase().includes(q)).sort((a, b) => b.cp - a.cp);
   }, [find, players]);
-  const option3D = useMemo(() => scatter3D(players, zoom, new Set(hits.map((p) => p.uid))), [players, zoom, hits]);
+  const option3D = useCallback((w) => scatter3D(players, zoom, new Set(hits.map((p) => p.uid)), w), [players, zoom, hits]);
 
   const value = parseFloat(cp);
   const rank = value > 0 ? d.cps.filter((c) => c > value).length + 1 : null;
@@ -175,7 +176,7 @@ export default function Advanced() {
 
       <div className="cols">
         <Card className="s7" title="Finals, CP and FDU in 3D" note="Drag to turn it. Lighter points are higher tribulation tiers.">
-          <Chart option={option3D} type="3d" ratio={0.7} maxHeight={480} />
+          <Chart option={option3D} type="3d" ratio={0.7} narrowRatio={0.9} maxHeight={480} />
           <div className="tools">
             <Field label="Highlight a player by name or UID" type="search" value={find} onChange={(e) => setFind(e.target.value)} autoComplete="off" />
             <Field label="Zoom" type="range" min={1} max={100} step={1} value={zoom} onChange={(e) => setZoom(Number(e.target.value))} />

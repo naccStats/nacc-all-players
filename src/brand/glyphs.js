@@ -79,13 +79,16 @@ export function crestSvg(name, size = 36) {
 const METAL = { 1: ['#fff1c9', '#e3b65c', '#8f6a22'], 2: ['#ffffff', '#c2cad2', '#737d88'], 3: ['#ffd9b5', '#cf8a55', '#7d4a24'] };
 const LEAF = 'M10.5 24c-3.600-.2-5.600-2-6.300-5 3.300.100 5.400 1.800 6.300 5z';
 
+// each medal has its own gradient: one shared by id is not drawn while the medal that holds it is hidden
+let medals = 0;
 export function rankSvg(rank, size = 40) {
   const m = METAL[rank];
   if (!m) return `<span class="rank-no">${rank}</span>`;
+  const id = `md-${medals += 1}`;
   const leaves = [0, 26, 52, 78, 104].map((a) => `<path d="${LEAF}" transform="rotate(${a - 64} 24 24)"/><path d="${LEAF}" transform="translate(48 0) scale(-1 1) rotate(${a - 64} 24 24)"/>`).join('');
   return `<svg class="medal" width="${size}" height="${size}" viewBox="0 0 48 48" role="img" aria-label="Rank ${rank}">` +
-    `<defs><linearGradient id="md-${rank}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${m[0]}"/><stop offset=".5" stop-color="${m[1]}"/><stop offset="1" stop-color="${m[2]}"/></linearGradient></defs>` +
-    `<g fill="url(#md-${rank})">${leaves}</g><circle cx="24" cy="24" r="12" fill="#15120f" stroke="url(#md-${rank})" stroke-width="1.8"/>` +
+    `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${m[0]}"/><stop offset=".5" stop-color="${m[1]}"/><stop offset="1" stop-color="${m[2]}"/></linearGradient></defs>` +
+    `<g fill="url(#${id})">${leaves}</g><circle cx="24" cy="24" r="12" fill="#15120f" stroke="url(#${id})" stroke-width="1.8"/>` +
     `<text x="24" y="29.600" text-anchor="middle" font-family="Spectral, Georgia, serif" font-weight="500" font-size="17" fill="${m[0]}">${rank}</text></svg>`;
 }
 

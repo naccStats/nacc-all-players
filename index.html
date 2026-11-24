@@ -93,14 +93,16 @@
   .nx-win__bar { height: 46px; padding: 0 14px; } .nx-win__bar b { font-size: 18px; }
   .nx-win__head { display: none; }
   .nx-win__row { height: 56px; }
-  .nx-win__head, .nx-win__row { grid-template-columns: 36px minmax(0, 1fr) 88px; gap: 10px; padding: 0 14px 0 8px; }
+  .nx-win__head, .nx-win__row { grid-template-columns: 36px minmax(0, 1fr) 60px; gap: 10px; padding: 0 14px 0 8px; }
+  .nx-win__row .cp > i { width: 60px; }
   .nx-win__row > :nth-child(3), .nx-win__row > .tier { display: none; }
-  .nx-win__row > b { gap: 10px; font-size: 15px; }
+  .nx-win__row > b { gap: 8px; font-size: 15px; } .nx-win__row > b .crest { width: 30px; height: 30px; }
   .nx-win__bar { border-bottom: 1px solid rgb(201 164 90 / .26); }
   .hero--centred .hero__window > .ly-piece.nx-win { width: calc(100% - 2 * var(--s-4)); }
   .nx-win__row:nth-of-type(n) { display: none; }
   .nx-win__row:nth-of-type(-n+5) { display: grid; }
 }
+@media (max-width: 359px) { .nx-win__row > b .crest { display: none; } .nx-win__row > b { font-size: 14px; } .nx-rec b { font-size: 17px !important; } }
 @media (max-width: 639px) and (min-height: 760px) { .nx-win__row:nth-of-type(-n+7) { display: grid; } }
 
 /* the app frame: the list beside the open record */

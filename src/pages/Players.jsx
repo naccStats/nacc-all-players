@@ -5,7 +5,7 @@ import { usePlayers } from '../context/DataContext';
 import { useToast } from '../hooks/useToast';
 import { formatCP, formatStat } from '../utils/formatters';
 import { tribRank } from '../utils/tribulationSystem';
-import { Beast, Cp, Crest, Empty, Field, PageHead, Rank, Select, Tier, Who } from '../components/ui';
+import { Beast, Cp, Crest, Empty, Field, PageHead, PlayerRows, Rank, Select, Tier, Who, cx } from '../components/ui';
 import { cpHtml } from '../brand/glyphs';
 
 const PER_PAGE = [10, 30, 50, 100];
@@ -14,8 +14,8 @@ const COLUMNS = [
   { key: 'guild', label: 'Guild' },
   { key: 'tribulation', label: 'Tribulation' },
   { key: 'cp', label: 'CP', right: true },
-  { key: 'fdu', label: 'FDU', right: true, title: 'Finals damage up' },
-  { key: 'fdd', label: 'FDD', right: true, title: 'Finals damage down' },
+  { key: 'fdu', label: 'FDU', right: true, wide: true, title: 'Finals damage up' },
+  { key: 'fdd', label: 'FDD', right: true, wide: true, title: 'Finals damage down' },
   { key: 'totalFinals', label: 'Finals', right: true },
   { key: 'chaosBeast', label: 'Beast' },
 ];
@@ -124,7 +124,7 @@ export default function Players() {
 
   return (
     <>
-      <PageHead title="Players" lead="Every tracked player. Select a column to sort by it, or a row to open that player." />
+      <PageHead title="Players" lead="Every tracked player. Sort or filter the list, or open a player for the full record." />
       <Podium players={ranked.slice(0, 3)} />
       <section className="card card--flush">
         <div className="filters">
@@ -157,11 +157,11 @@ export default function Players() {
                 <thead>
                   <tr>
                     <th className="rank">Rank</th>
-                    {COLUMNS.map(({ key, label, right, title }) => {
+                    {COLUMNS.map(({ key, label, right, wide, title }) => {
                       const on = sort.key === key;
                       const Arrow = sort.dir === 'desc' ? ArrowDown : ArrowUp;
                       return (
-                        <th key={key} className={right ? 'r' : undefined} aria-sort={on ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
+                        <th key={key} className={cx(right && 'r', wide && 'wide-lg') || undefined} aria-sort={on ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
                           <button type="button" title={title} onClick={() => sortBy(key)}>{label}{on && <Arrow size={14} aria-hidden="true" />}</button>
                         </th>
                       );
@@ -176,8 +176,8 @@ export default function Players() {
                       <td>{p.guild || <span className="muted">No guild</span>}</td>
                       <td><Tier trib={p.tribulation} /></td>
                       <td className="r"><Cp value={p.cp} max={maxCP} /></td>
-                      <td className="r">{formatStat(p.fdu)}</td>
-                      <td className="r">{formatStat(p.fdd)}</td>
+                      <td className="r wide-lg">{formatStat(p.fdu)}</td>
+                      <td className="r wide-lg">{formatStat(p.fdd)}</td>
                       <td className="r"><Finals p={p} max={maxFinals} /></td>
                       <td><Beast player={p} /></td>
                     </tr>
@@ -187,19 +187,10 @@ export default function Players() {
             </div>
 
             <div className="rows-sm">
-              <div style={{ padding: '0 20px 16px', borderBottom: '1px solid var(--line)' }}>
+              <div className="rows-sm__sort">
                 <Select label="Sort by" value={sort.key} onChange={change((key) => setSort({ key, dir: key === 'player' ? 'asc' : 'desc' }))} options={SORTS} />
               </div>
-              {rows.map((p) => (
-                <Link key={p.uid} to={`/player/${p.uid}`} className={`top-${p.rank}`}>
-                  <span className="rank"><Rank rank={p.rank} size={36} /></span>
-                  <Crest name={p.guild} size={36} />
-                  <b>{p.player}</b>
-                  <Cp value={p.cp} />
-                  <small>{p.guild || 'No guild'}</small>
-                  <small className="r">{p.tribulation || '-'}{p.totalFinals > 0 ? `, ${formatStat(p.totalFinals)}` : ''}</small>
-                </Link>
-              ))}
+              <PlayerRows players={rows} />
             </div>
           </>
         )}

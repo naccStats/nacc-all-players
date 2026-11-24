@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { usePlayers } from '../context/DataContext';
 import { formatCP } from '../utils/formatters';
-import { beastColor, beastNames, C, FONT, catAxis, grid, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
+import { beastColor, beastNames, C, FONT, catAxis, grid, guildAxisLabel, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
 import { Bars, Card, Crest, Legend, PageHead, Stats } from '../components/ui';
 import { beastSvg } from '../brand/glyphs';
 import Chart from '../components/Chart';
@@ -19,9 +19,9 @@ function armies(guilds, names) {
       formatter: (ps) => tip(guilds[ps[0].dataIndex].name, ps.map((p) => [p.seriesName, p.value])),
     }),
     grid: grid({ top: 4, right: 28 }),
-    xAxis: valueAxis({ splitNumber: 5 }),
+    xAxis: valueAxis({ splitNumber: isNarrow(w) ? 3 : 5 }),
     yAxis: catAxis(guilds.map((g) => g.name), {
-      inverse: true, axisLabel: { width: isNarrow(w) ? 80 : 140, overflow: 'truncate' },
+      inverse: true, axisLabel: { ...guildAxisLabel(w), overflow: 'truncate' },
     }),
     series: names.map((b, i) => ({
       name: b, type: 'bar', stack: 'owners', barWidth: 16,

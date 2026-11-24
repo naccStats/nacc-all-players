@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import ReactECharts from 'echarts-for-react';
+import { isNarrow } from '../utils/chartTheme';
 
 /**
  * CHART_DEFAULTS — per-type sizing & behaviour presets.
@@ -35,11 +36,12 @@ const CHART_DEFAULTS = {
  *   type       — chart family key from CHART_DEFAULTS (sets ratio/maxHeight/square/gl)
  *   ratio      — explicit height/width ratio (overrides type default)
  *   maxHeight  — explicit max canvas height px (overrides type default)
+ *   narrowRatio — height/width ratio on phone-width cards, where maxHeight does not apply
  *   square     — explicit square-canvas flag (overrides type default)
  *   gl         — explicit GL tap-tooltip flag (overrides type default)
  *   opts       — passed to ReactECharts opts prop (e.g. { renderer: 'svg' })
  */
-const Chart = React.memo(function Chart({ option, type, ratio, maxHeight, opts = {}, square, gl }) {
+const Chart = React.memo(function Chart({ option, type, ratio, narrowRatio, maxHeight, opts = {}, square, gl }) {
   const td         = (type && CHART_DEFAULTS[type]) || {};
   const _ratio     = ratio     !== undefined ? ratio     : (td.ratio     ?? 9 / 16);
   const _maxHeight = maxHeight !== undefined ? maxHeight : (td.maxHeight ?? 400);
@@ -55,8 +57,9 @@ const Chart = React.memo(function Chart({ option, type, ratio, maxHeight, opts =
 
   const compute = useCallback((width) => {
     if (!width) return undefined;
+    if (narrowRatio && isNarrow(width)) return Math.round(width * narrowRatio);
     return Math.max(Math.min(Math.round(width * _ratio), _maxHeight), MIN_CHART_HEIGHT);
-  }, [_ratio, _maxHeight]);
+  }, [_ratio, _maxHeight, narrowRatio]);
 
   useEffect(() => {
     if (!wrapRef.current) return;

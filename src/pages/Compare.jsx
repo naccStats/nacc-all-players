@@ -5,7 +5,7 @@ import { computeGuildStats } from '../utils/statsEngine';
 import { SCORE_PARTS, guildScore } from '../utils/guildScore';
 import { formatCP, formatStat } from '../utils/formatters';
 import { TRIB_PREFIXES, tribName, tribPrefix } from '../utils/tribulationSystem';
-import { C, FONT, PAIR, catAxis, grid, tip, tooltip, valueAxis } from '../utils/chartTheme';
+import { C, FONT, PAIR, catAxis, grid, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
 import { Card, Crest, Legend, PageHead, Select } from '../components/ui';
 import Chart from '../components/Chart';
 
@@ -29,14 +29,15 @@ const tierCounts = (d) => {
   return out;
 };
 
-function tierOption(a, b) {
+const tierOption = (a, b) => (w) => {
+  const narrow = isNarrow(w); // bars lie down on a phone, so no count sits on the next bar
   const [ca, cb] = [tierCounts(a), tierCounts(b)];
   const tiers = TRIB_PREFIXES.filter((t) => ca[t] || cb[t]);
   const side = (d, c, i) => ({
-    name: d.name, type: 'bar', barMaxWidth: 18, barGap: '12%',
+    name: d.name, type: 'bar', barMaxWidth: narrow ? 10 : 18, barGap: narrow ? '30%' : '12%',
     data: tiers.map((t) => c[t] || 0),
-    itemStyle: { color: PAIR[i], borderRadius: [4, 4, 0, 0] },
-    label: { show: true, position: 'top', color: C.soft, fontSize: 13, fontFamily: FONT, formatter: (p) => p.value || '' },
+    itemStyle: { color: PAIR[i], borderRadius: narrow ? [0, 4, 4, 0] : [4, 4, 0, 0] },
+    label: { show: true, position: narrow ? 'right' : 'top', color: C.soft, fontSize: narrow ? 12 : 13, fontFamily: FONT, formatter: (p) => p.value || '' },
   });
   return {
     tooltip: tooltip({
@@ -44,12 +45,12 @@ function tierOption(a, b) {
       axisPointer: { type: 'shadow', shadowStyle: { color: 'rgba(255,255,255,0.04)' } },
       formatter: (ps) => tip(tribName(tiers[ps[0].dataIndex]), ps.map((p) => [p.seriesName, p.value])),
     }),
-    grid: grid({ top: 24, right: 4 }),
-    xAxis: catAxis(tiers, { axisLabel: { interval: 0 } }),
-    yAxis: valueAxis({ splitNumber: 4 }),
+    ...(narrow
+      ? { grid: grid({ top: 4, right: 24 }), xAxis: valueAxis({ splitNumber: 4 }), yAxis: catAxis(tiers, { inverse: true, axisLabel: { interval: 0 } }) }
+      : { grid: grid({ top: 24, right: 4 }), xAxis: catAxis(tiers, { axisLabel: { interval: 0 } }), yAxis: valueAxis({ splitNumber: 4 }) }),
     series: [side(a, ca, 0), side(b, cb, 1)],
   };
-}
+};
 
 export default function Compare() {
   const players = usePlayers();
@@ -90,7 +91,7 @@ export default function Compare() {
               <span style={{ background: PAIR[1] }} />
             </div>
           </div>
-          <table className="duel-table duel-table--tight">
+          <table className="duel-table duel-table--score">
             <tbody>
               {SCORE_PARTS.map(({ label, of }) => (
                 <tr key={label}><td>{label}</td><td>{of(a, b).toFixed(1)}</td><td>{of(b, a).toFixed(1)}</td></tr>
@@ -121,7 +122,7 @@ export default function Compare() {
         note="Players in each tier, strongest first"
         side={<Legend items={[{ label: a.name, color: PAIR[0] }, { label: b.name, color: PAIR[1] }]} />}
       >
-        <Chart option={option} ratio={0.6} maxHeight={380} />
+        <Chart option={option} ratio={0.6} narrowRatio={1.5} maxHeight={380} />
       </Card>
     </>
   );

@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { usePlayers, useTopPlayers } from '../context/DataContext';
 import { computeGuildStats } from '../utils/statsEngine';
 import { formatCP, formatStat } from '../utils/formatters';
 import { C, FONT, ROLE_COLORS, grid, tip, tooltip, valueAxis } from '../utils/chartTheme';
-import { Bars, Card, Cp, Legend, PageHead, Rank, Seg, Tier, Who } from '../components/ui';
+import { Bars, Card, Cp, Legend, PageHead, Rank, RowDetails, Seg, Tier, Who } from '../components/ui';
 import Chart from '../components/Chart';
 import { RADAR_AXES, radarOption } from '../components/radar';
 
@@ -88,7 +89,7 @@ function StatsTable({ top, uids, guildNames }) {
       note="Ordered by total Finals. Bars are scaled to the highest value in their column."
       side={<Legend items={[{ label: 'Heal', color: C.aqua }, { label: 'Beast', color: C.blue }]} />}
     >
-      <div className="table-wrap">
+      <div className="table-wrap table-main table-main--wide">
         <table className="table--dense">
           <thead>
             <tr>
@@ -118,6 +119,27 @@ function StatsTable({ top, uids, guildNames }) {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="rows-sm">
+        {rows.map((p, i) => (
+          <RowDetails
+            key={p.uid || p.player}
+            rank={i + 1}
+            open={i === 0}
+            mark={p.guild}
+            name={p.player}
+            sub={[p.guild || 'No guild', p.trib].filter(Boolean).join(', ')}
+            value={<span className="row-sm__value">{formatStat(p.totalFinals)}</span>}
+            stats={[
+              ['CP', formatCP(p.cp)], ['Finals', formatStat(p.totalFinals)], ['FDU', formatStat(p.fdu)], ['FDD', formatStat(p.fdd)],
+              ...METRICS.map((m) => [m.label, (
+                <span className="micro" style={{ '--v': `${(p[m.key] / max[m.key]) * 100}%`, '--c': m.color }}>{formatStat(p[m.key])}<i aria-hidden="true" /></span>
+              )]),
+            ]}
+          >
+            {uids.has(p.uid) && <Link className="btn btn--secondary" to={`/player/${p.uid}`}>Open the full record</Link>}
+          </RowDetails>
+        ))}
       </div>
     </Card>
   );

@@ -5,8 +5,8 @@ import { usePlayers } from '../context/DataContext';
 import { computeGuildStats } from '../utils/statsEngine';
 import { formatCP, formatStat } from '../utils/formatters';
 import { TRIB_PREFIXES, tribName, tribPrefix, tribRank } from '../utils/tribulationSystem';
-import { C, FONT, RAMP, catAxis, grid, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
-import { Bars, Card, Cp, Crest, PageHead, Select, Stats, Tier } from '../components/ui';
+import { C, FONT, RAMP, catAxis, grid, guildAxisLabel, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
+import { Bars, Card, Cp, Crest, PageHead, RowDetails, Select, Stats, Tier } from '../components/ui';
 import Chart from '../components/Chart';
 
 const COLUMNS = [
@@ -39,9 +39,9 @@ function tierMap(guilds, focus) {
       formatter: (p) => tip(guilds[p.value[1]].name, [[tribName(tiers[p.value[0]]), `${p.value[2]} players`]]),
     }),
     grid: grid({ top: 4, right: 4, bottom: 4 }),
-    xAxis: catAxis(tiers, { position: 'top', axisLine: { show: false }, axisLabel: { color: C.muted, interval: 0, fontSize: isNarrow(w) ? 11 : 13 } }),
+    xAxis: catAxis(tiers, { position: 'top', axisLine: { show: false }, axisLabel: { color: C.muted, interval: 0, hideOverlap: false, ...(isNarrow(w) && { rotate: 90, fontSize: 12 }) } }),
     yAxis: catAxis(guilds.map((g) => g.name), {
-      inverse: true, axisLine: { show: false }, axisLabel: { width: isNarrow(w) ? 76 : 140, overflow: 'truncate' },
+      inverse: true, axisLine: { show: false }, axisLabel: { ...guildAxisLabel(w), overflow: 'truncate' },
     }),
     visualMap: { show: false, min: 1, max, inRange: { color: RAMP } },
     series: [{
@@ -67,7 +67,7 @@ function sizeMap(guilds, focus) {
       },
     }),
     grid: grid({ bottom: 30, left: 28, right: 28 }),
-    xAxis: valueAxis({ name: 'Average combat power', nameGap: 34, splitNumber: isNarrow(w) ? 3 : 5, axisLabel: { formatter: formatCP } }),
+    xAxis: valueAxis({ name: 'Average combat power', nameGap: 34, splitNumber: isNarrow(w) ? 3 : 5, axisLabel: { formatter: (v) => (v ? formatCP(v) : '0') } }),
     yAxis: valueAxis({ name: 'Members', nameGap: 36, scale: true, minInterval: 1, min: (v) => Math.max(0, v.min - 3), max: (v) => v.max + 3 }),
     series: [{
       type: 'scatter',
@@ -86,11 +86,22 @@ function sizeMap(guilds, focus) {
   });
 }
 
+const topTier = (g) => Object.keys(g.tribBreakdown).sort((a, b) => tribRank(b) - tribRank(a))[0];
+
+const Members = ({ guild }) => (
+  <div className="members">
+    {[...guild.members].sort((a, b) => b.cp - a.cp).slice(0, 5).map((m) => (
+      <Link key={m.uid} to={`/player/${m.uid}`}><b>{m.player}</b><span className="muted">{formatCP(m.cp)}</span><Tier trib={m.tribulation} short /></Link>
+    ))}
+  </div>
+);
+
 export default function Guilds() {
   const players = usePlayers();
   const [focus, setFocus] = useState('');
   const [open, setOpen] = useState(null);
   const [sort, setSort] = useState({ key: 'totalCP', dir: 'desc' });
+  const sorted = COLUMNS.find((c) => c.key === sort.key);
 
   const guilds = useMemo(() => computeGuildStats(players), [players]);
   const total = guilds.reduce((s, g) => s + g.totalCP, 0);
@@ -132,12 +143,12 @@ export default function Guilds() {
           />
         </Card>
         <Card className="s7" title="Players by tier" note="Strongest tiers on the left">
-          <div className="fill"><Chart option={tierMap(guilds, focus)} ratio={0.82} maxHeight={580} /></div>
+          <div className="fill"><Chart option={tierMap(guilds, focus)} ratio={0.82} narrowRatio={1.1} maxHeight={580} /></div>
         </Card>
       </div>
 
       <Card className="card--flush" title="Guild roster" note="Open a guild to see its five strongest members">
-        <div className="table-wrap" style={{ marginTop: -8 }}>
+        <div className="table-wrap table-main table-main--wide" style={{ marginTop: -8 }}>
           <table>
             <thead>
               <tr>
@@ -159,7 +170,6 @@ export default function Guilds() {
             <tbody>
               {rows.map((g) => {
                 const isOpen = open === g.name;
-                const best = Object.keys(g.tribBreakdown).sort((a, b) => tribRank(b) - tribRank(a))[0];
                 return (
                   <Fragment key={g.name}>
                     <tr className={`is-link${isOpen ? ' is-open' : ''}`} onClick={() => setOpen(isOpen ? null : g.name)}>
@@ -173,16 +183,12 @@ export default function Guilds() {
                           {key === 'totalCP' ? <Cp value={g.totalCP} max={guilds[0].totalCP} /> : fmt(g[key])}
                         </td>
                       ))}
-                      <td><Tier trib={best} /></td>
+                      <td><Tier trib={topTier(g)} /></td>
                     </tr>
                     {isOpen && (
                       <tr className="sub">
                         <td colSpan={COLUMNS.length + 2}>
-                          <div className="members">
-                            {[...g.members].sort((a, b) => b.cp - a.cp).slice(0, 5).map((m) => (
-                              <Link key={m.uid} to={`/player/${m.uid}`}><b>{m.player}</b><span className="muted">{formatCP(m.cp)}</span><Tier trib={m.tribulation} short /></Link>
-                            ))}
-                          </div>
+                          <Members guild={g} />
                         </td>
                       </tr>
                     )}
@@ -192,10 +198,27 @@ export default function Guilds() {
             </tbody>
           </table>
         </div>
+        <div className="rows-sm">
+          <div className="rows-sm__sort">
+            <Select label="Sort by" value={sort.key} onChange={(key) => setSort({ key, dir: 'desc' })} options={COLUMNS.map(({ key, label }) => ({ value: key, label }))} />
+          </div>
+          {rows.map((g) => (
+            <RowDetails
+              key={g.name}
+              mark={g.name}
+              name={g.name}
+              sub={sorted.key === 'totalCP' ? `${g.memberCount} members` : `${sorted.label} ${sorted.fmt(g[sorted.key])}`}
+              value={<Cp value={g.totalCP} />}
+              stats={[...COLUMNS.map(({ key, label, fmt }) => [label, fmt(g[key])]), ['Top tier', <Tier trib={topTier(g)} />]]}
+            >
+              <Members guild={g} />
+            </RowDetails>
+          ))}
+        </div>
       </Card>
 
       <Card title="Average power against roster size" note="A larger dot means more members own a chaos beast">
-        <Chart option={sizeMap(guilds, focus)} ratio={0.6} maxHeight={420} />
+        <Chart option={sizeMap(guilds, focus)} ratio={0.6} narrowRatio={0.9} maxHeight={420} />
       </Card>
     </>
   );

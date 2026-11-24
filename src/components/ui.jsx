@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { DATA_AS_OF } from '../data-date';
 import { beastSvg, cpHtml, crestSvg, logoSvg, rankSvg, tierHtml } from '../brand/glyphs';
 import { beastColor } from '../utils/chartTheme';
-import { formatCP } from '../utils/formatters';
+import { ChevronRight } from 'lucide-react';
+import { formatCP, formatInt } from '../utils/formatters';
 
 export const cx = (...a) => a.filter(Boolean).join(' ');
 
@@ -38,6 +39,34 @@ export const Who = ({ guild, name, sub, to, size = 40 }) => (
       {sub && <small>{sub}</small>}
     </span>
   </span>
+);
+
+/* Phones and small tablets: a list in place of a player table. players carry their rank. */
+export const PlayerRows = ({ players }) => players.map((p) => (
+  <Link key={p.uid} to={`/player/${p.uid}`} className={`row-sm top-${p.rank}`}>
+    <span className="rank"><Rank rank={p.rank} size={36} /></span>
+    <Crest name={p.guild} size={34} />
+    <b>{p.player}</b>
+    <Cp value={p.cp} />
+    <small>{[p.guild || 'No guild', p.tribulation, p.totalFinals > 0 && `Finals ${formatInt(p.totalFinals)}`].filter(Boolean).join(', ')}</small>
+  </Link>
+));
+
+/* The same for tables with many columns: one line a row, every column inside it. */
+export const RowDetails = ({ mark, name, sub, value, rank, stats, children, open }) => (
+  <details className={cx('row-more', rank && `top-${rank}`)} open={open}>
+    <summary className="row-sm">
+      {rank ? <span className="rank"><Rank rank={rank} size={36} /></span> : <ChevronRight className="row-sm__arrow" size={18} aria-hidden="true" />}
+      <Crest name={mark} size={34} />
+      <b>{name}</b>
+      {value}
+      <small>{sub}</small>
+    </summary>
+    <div className="row-more__body">
+      <dl className="pairs">{stats.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
+      {children}
+    </div>
+  </details>
 );
 
 export const PageHead = ({ title, lead, children, crest }) => (

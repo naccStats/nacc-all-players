@@ -5,7 +5,7 @@ import { computeGlobalStats } from '../utils/statsEngine';
 import { formatCP, formatInt, formatStat } from '../utils/formatters';
 import { TRIB_PREFIXES, tribColor, tribName } from '../utils/tribulationSystem';
 import { C, catAxis, grid, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
-import { Bars, Card, Cp, Field, PageHead, Rank, Stats, Tier, Who } from '../components/ui';
+import { Bars, Card, Cp, Field, PageHead, PlayerRows, Rank, Stats, Tier, Who } from '../components/ui';
 import Chart from '../components/Chart';
 
 const BINS = 12;
@@ -107,7 +107,7 @@ export default function Overview() {
           title="Top 10 players"
           side={<Link className="link" to="/rankings">See all {stats.total}</Link>}
         >
-          <div className="table-wrap" style={{ marginTop: -8 }}>
+          <div className="table-wrap table-main" style={{ marginTop: -8 }}>
             <table>
               <thead>
                 <tr><th className="rank">Rank</th><th>Player</th><th className="wide">Tribulation</th><th className="r">CP</th></tr>
@@ -124,6 +124,7 @@ export default function Overview() {
               </tbody>
             </table>
           </div>
+          <div className="rows-sm"><PlayerRows players={top10.map((p, i) => ({ ...p, rank: i + 1 }))} /></div>
         </Card>
         <Card className="s5" title="Tribulation tiers" note="Players in each tier, strongest first">
           <Bars

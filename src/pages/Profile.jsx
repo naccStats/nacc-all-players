@@ -90,13 +90,13 @@ export default function Profile() {
       </button>
       <div>
         <PageHead title={player.player} crest={player.guild} />
-        <div className="profile__meta" style={{ marginTop: -8 }}>
+        <div className="profile__meta">
           {player.guild
             ? <Link className="link" to={`/rankings?guild=${encodeURIComponent(player.guild)}`}>{player.guild}</Link>
             : <span>No guild</span>}
-          <span className="muted">UID {player.uid}</span>
-          <span className="muted">{player.region}</span>
           <span className={isActive(player) ? 'up' : 'muted'}>{isActive(player) ? 'Active' : 'AFK'}</span>
+          <span className="muted">{player.region}</span>
+          <span className="muted">UID {player.uid}</span>
         </div>
       </div>
 

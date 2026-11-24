@@ -45,6 +45,9 @@ export const tip = (title, rows) =>
 
 export const isNarrow = (w) => w < 480;
 
+/* Guild names down the side of a chart: in full on a phone too */
+export const guildAxisLabel = (w) => (isNarrow(w) ? { width: 92, fontSize: 12 } : { width: 140 });
+
 export const grid = (extra = {}) => ({ left: 4, right: 16, top: 16, bottom: 8, containLabel: true, ...extra });
 
 const label = { color: C.muted, fontSize: 13, fontFamily: FONT, hideOverlap: true };
