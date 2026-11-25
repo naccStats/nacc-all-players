@@ -54,12 +54,13 @@ export default function Beasts() {
   }, [players]);
 
   const noneAvg = avg(without);
+  const unnamed = owners.filter((p) => !p.chaosBeast).length;
   return (
     <>
       <PageHead title="Chaos beasts" lead="Who owns which beast, how strong their owners are, and which guilds hold the most." />
       <Stats
         items={[
-          { label: 'Players with a beast', value: owners.length, sub: `${((owners.length / players.length) * 100).toFixed(1)}% of the region` },
+          { label: 'Players with a beast', value: owners.length, sub: `${((owners.length / players.length) * 100).toFixed(1)}% of the region${unnamed ? `, ${unnamed} with no beast named` : ''}` },
           { label: 'Most owned', value: beasts[0].name, sub: `${beasts[0].count} players` },
           { label: 'Average CP with a beast', value: formatCP(avg(owners)) },
           { label: 'Average CP without', value: formatCP(noneAvg) },

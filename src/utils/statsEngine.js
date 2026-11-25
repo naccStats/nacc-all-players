@@ -1,39 +1,5 @@
-import { normalizeGuild } from './formatters.js';
-
 /* The sheet marks an inactive player "AFK" (older exports: "N" or "NO"); anything else is active. */
 export const isActive = (p) => !['AFK', 'N', 'NO'].includes(p.updated);
-
-const toNumber = (v) => {
-  const n = Number(v);
-  return v === null || v === undefined || v === '' || isNaN(n) ? 0 : n;
-};
-
-/* One CSV row to one player, or null when the row has no name, UID or combat power. */
-export const parsePlayer = (row) => {
-  const player = (row.Player || '').toString().trim();
-  const uid = row.UID ? String(row.UID).trim() : null;
-  const cp = toNumber(row.CP);
-  if (!player || !uid || cp <= 0) return null;
-  const chaos = (row['Has Chaos'] || '').toString().trim();
-  const hasChaos = !['', 'N', 'NO'].includes(chaos.toUpperCase());
-  return {
-    uid, player, cp, hasChaos,
-    region: (row.Region || 'NA').toString().trim(),
-    guild: normalizeGuild(row.Guild),
-    fdu: toNumber(row.FDU),
-    fdd: toNumber(row.FDD),
-    totalFinals: toNumber(row['Total Finals']),
-    tribulation: (row.Tribulation || '').toString().trim().toUpperCase(),
-    // "Y" says the player has a beast but not which one
-    chaosBeast: hasChaos && !['Y', 'YES'].includes(chaos.toUpperCase()) ? chaos : null,
-    updated: (row['Updated?'] || '').toString().trim().toUpperCase(),
-  };
-};
-
-export const parsePlayers = (rows) => {
-  const seen = new Set();
-  return rows.map(parsePlayer).filter((p) => p && !seen.has(p.uid) && seen.add(p.uid));
-};
 
 export const TOP_GUILDS_LIMIT  = 20;
 export const TOP_PLAYERS_LIMIT = 20;

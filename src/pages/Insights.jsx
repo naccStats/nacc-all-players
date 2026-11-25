@@ -128,10 +128,10 @@ function StatsTable({ top, uids, guildNames }) {
             open={i === 0}
             mark={p.guild}
             name={p.player}
-            sub={[p.guild || 'No guild', p.trib].filter(Boolean).join(', ')}
+            sub={p.guild || 'No guild'}
             value={<span className="row-sm__value">{formatStat(p.totalFinals)}</span>}
             stats={[
-              ['CP', formatCP(p.cp)], ['Finals', formatStat(p.totalFinals)], ['FDU', formatStat(p.fdu)], ['FDD', formatStat(p.fdd)],
+              ['CP', formatCP(p.cp)], ['Tribulation', <Tier trib={p.trib} />], ['FDU', formatStat(p.fdu)], ['FDD', formatStat(p.fdd)],
               ...METRICS.map((m) => [m.label, (
                 <span className="micro" style={{ '--v': `${(p[m.key] / max[m.key]) * 100}%`, '--c': m.color }}>{formatStat(p[m.key])}<i aria-hidden="true" /></span>
               )]),

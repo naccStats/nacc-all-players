@@ -5,7 +5,7 @@ import { usePlayers } from '../context/DataContext';
 import { useToast } from '../hooks/useToast';
 import { formatCP, formatStat } from '../utils/formatters';
 import { tribRank } from '../utils/tribulationSystem';
-import { Beast, Cp, Crest, Empty, Field, PageHead, PlayerRows, Rank, Select, Tier, Who, cx } from '../components/ui';
+import { Beast, Cp, Crest, Empty, Field, Finals, PageHead, PlayerRows, Rank, Select, SortBar, Tier, Who, cx } from '../components/ui';
 import { cpHtml } from '../brand/glyphs';
 
 const PER_PAGE = [10, 30, 50, 100];
@@ -26,6 +26,8 @@ const SORTS = [
   { value: 'fdd', label: 'FDD' },
   { value: 'totalFinals', label: 'Total Finals' },
   { value: 'player', label: 'Name' },
+  { value: 'guild', label: 'Guild' },
+  { value: 'chaosBeast', label: 'Chaos beast' },
 ];
 
 const sortValue = (p, key) => (key === 'tribulation' ? tribRank(p.tribulation) : p[key] ?? '');
@@ -64,17 +66,6 @@ function Podium({ players }) {
     </ol>
   );
 }
-
-/* Total Finals, with the two halves it is made of */
-const Finals = ({ p, max }) => {
-  if (!(p.totalFinals > 0)) return <span className="muted">-</span>;
-  return (
-    <span className="finals" title={`FDU ${formatStat(p.fdu)}, FDD ${formatStat(p.fdd)}`}>
-      {formatStat(p.totalFinals)}
-      <i aria-hidden="true"><b style={{ width: `${(p.fdu / max) * 100}%` }} /><b style={{ width: `${(p.fdd / max) * 100}%` }} /></i>
-    </span>
-  );
-};
 
 export default function Players() {
   const players = usePlayers();
@@ -187,10 +178,8 @@ export default function Players() {
             </div>
 
             <div className="rows-sm">
-              <div className="rows-sm__sort">
-                <Select label="Sort by" value={sort.key} onChange={change((key) => setSort({ key, dir: key === 'player' ? 'asc' : 'desc' }))} options={SORTS} />
-              </div>
-              <PlayerRows players={rows} />
+              <SortBar sort={sort} onChange={change(setSort)} options={SORTS} ascending={['player', 'guild']} />
+              <PlayerRows players={rows} sortKey={sort.key} />
             </div>
           </>
         )}

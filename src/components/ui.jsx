@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom';
 import { DATA_AS_OF } from '../data-date';
 import { beastSvg, cpHtml, crestSvg, logoSvg, rankSvg, tierHtml } from '../brand/glyphs';
 import { beastColor } from '../utils/chartTheme';
-import { ChevronRight } from 'lucide-react';
-import { formatCP, formatInt } from '../utils/formatters';
+import { ArrowDown, ArrowUp, ChevronRight } from 'lucide-react';
+import { formatCP, formatStat } from '../utils/formatters';
 
 export const cx = (...a) => a.filter(Boolean).join(' ');
 
@@ -41,25 +41,26 @@ export const Who = ({ guild, name, sub, to, size = 40 }) => (
   </span>
 );
 
-/* Phones and small tablets: a list in place of a player table. players carry their rank. */
-export const PlayerRows = ({ players }) => players.map((p) => (
-  <Link key={p.uid} to={`/player/${p.uid}`} className={`row-sm top-${p.rank}`}>
-    <span className="rank"><Rank rank={p.rank} size={36} /></span>
-    <Crest name={p.guild} size={34} />
-    <b>{p.player}</b>
-    <Cp value={p.cp} />
-    <small>{[p.guild || 'No guild', p.tribulation, p.totalFinals > 0 && `Finals ${formatInt(p.totalFinals)}`].filter(Boolean).join(', ')}</small>
-  </Link>
-));
+/* Total Finals, with the two halves it is made of */
+export const Finals = ({ p, max }) => {
+  if (!(p.totalFinals > 0)) return <span className="muted">-</span>;
+  return (
+    <span className="finals" title={`FDU ${formatStat(p.fdu)}, FDD ${formatStat(p.fdd)}`}>
+      {formatStat(p.totalFinals)}
+      <i aria-hidden="true"><b style={{ width: `${(p.fdu / max) * 100}%` }} /><b style={{ width: `${(p.fdd / max) * 100}%` }} /></i>
+    </span>
+  );
+};
 
-/* The same for tables with many columns: one line a row, every column inside it. */
+/* Phones and tablets: tables become rows that open. One line a row, every column of the table inside it. */
 export const RowDetails = ({ mark, name, sub, value, rank, stats, children, open }) => (
-  <details className={cx('row-more', rank && `top-${rank}`)} open={open}>
+  <details className={cx('row-more', rank && `row-more--ranked top-${rank}`)} open={open}>
     <summary className="row-sm">
       {rank ? <span className="rank"><Rank rank={rank} size={36} /></span> : <ChevronRight className="row-sm__arrow" size={18} aria-hidden="true" />}
       <Crest name={mark} size={34} />
       <b>{name}</b>
       {value}
+      {rank && <ChevronRight className="row-sm__arrow" size={18} aria-hidden="true" />}
       <small>{sub}</small>
     </summary>
     <div className="row-more__body">
@@ -68,6 +69,56 @@ export const RowDetails = ({ mark, name, sub, value, rank, stats, children, open
     </div>
   </details>
 );
+
+/* The player table as rows. players carry their rank; the figure at the end is the one they are sorted by. */
+const SHOWN = { fdu: 'FDU', fdd: 'FDD', totalFinals: 'Finals' };
+export const PlayerRows = ({ players, sortKey = 'cp' }) => {
+  const maxCP = Math.max(...players.map((p) => p.cp), 0);
+  const maxFinals = Math.max(...players.map((p) => p.totalFinals), 1);
+  return players.map((p) => (
+    <RowDetails
+      key={p.uid}
+      rank={p.rank}
+      mark={p.guild}
+      name={p.player}
+      sub={[p.guild || 'No guild', !SHOWN[sortKey] && (sortKey === 'chaosBeast' ? p.chaosBeast || (p.hasChaos ? 'Has a beast' : 'No beast') : p.tribulation)].filter(Boolean).join(', ')}
+      value={SHOWN[sortKey]
+        ? <span className="row-sm__value">{formatStat(p[sortKey])}<small>{SHOWN[sortKey]}</small></span>
+        : <span className="row-sm__cp"><Cp value={p.cp} /></span>}
+      stats={[
+        ['Combat power', <Cp value={p.cp} max={maxCP} />],
+        ['Total Finals', <Finals p={p} max={maxFinals} />],
+        ['FDU', formatStat(p.fdu)],
+        ['FDD', formatStat(p.fdd)],
+        ['Tribulation', <Tier trib={p.tribulation} />],
+        ['Chaos beast', p.hasChaos ? <Beast player={p} /> : 'None'],
+        ['Guild', p.guild || 'No guild'],
+        ['UID', p.uid],
+      ]}
+    >
+      <Link className="btn btn--secondary" to={`/player/${p.uid}`}>Open the full record</Link>
+    </RowDetails>
+  ));
+};
+
+/* What a column header does on a wide screen: pick the column, then the direction. */
+export const SortBar = ({ sort, onChange, options, ascending = [] }) => {
+  const down = sort.dir === 'desc';
+  const Arrow = down ? ArrowDown : ArrowUp;
+  return (
+    <div className="rows-sm__sort">
+      <Select label="Sort by" value={sort.key} onChange={(key) => onChange({ key, dir: ascending.includes(key) ? 'asc' : 'desc' })} options={options} />
+      <button
+        type="button"
+        className="icon-btn"
+        aria-label={down ? 'Sorted high to low. Reverse the order' : 'Sorted low to high. Reverse the order'}
+        onClick={() => onChange({ key: sort.key, dir: down ? 'asc' : 'desc' })}
+      >
+        <Arrow size={18} aria-hidden="true" />
+      </button>
+    </div>
+  );
+};
 
 export const PageHead = ({ title, lead, children, crest }) => (
   <header className="page-head">

@@ -50,6 +50,8 @@ Built with Vite, React 18, react-router-dom, ECharts and echarts-gl, lucide-reac
 2. Set the date in **`src/data-date.js`** (`DATA_AS_OF`). It is shown exactly as written on every page.
 3. Commit and push to `main`. The GitHub Actions workflow builds the site and publishes it.
 
+Totals (Finals, Heal, Beast) are added up by the site (`src/utils/playerData.js`), so the total columns in the sheets are only a check. `npm run dev` and `npm run build` list rows that look wrong under `[data]`, with file and line; on GitHub they appear as warnings on the workflow run.
+
 ### `public/data/players.csv`
 
 Contains **all players**. Must be a comma-separated `.csv` with exactly **12 columns** in this order:

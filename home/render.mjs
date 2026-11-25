@@ -4,19 +4,17 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import Papa from 'papaparse';
 import { beastSvg, cpHtml, crestSvg, logoSvg, rankSvg, tierHtml } from '../src/brand/glyphs.js';
 import { DATA_AS_OF } from '../src/data-date.js';
 import { PAIR, beastColor, beastNames } from '../src/utils/chartTheme.js';
 import { formatCP, formatStat } from '../src/utils/formatters.js';
+import { checkRows, parseCsv, parsePlayers, parseTopPlayers } from '../src/utils/playerData.js';
 import { SCORE_PARTS, guildScore } from '../src/utils/guildScore.js';
-import { computeGlobalStats, computeGuildStats, isActive, parsePlayers } from '../src/utils/statsEngine.js';
-import { TRIB_PREFIXES, tribColor, tribName } from '../src/utils/tribulationSystem.js';
+import { computeGlobalStats, computeGuildStats, isActive } from '../src/utils/statsEngine.js';
+import { TRIB_PREFIXES, tribColor, tribName, tribPrefix } from '../src/utils/tribulationSystem.js';
 
 const DATA = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public', 'data');
-const csv = (name, dir) => Papa.parse(fs.readFileSync(path.join(dir, name), 'utf8').replace(/^﻿/, ''), {
-  header: true, skipEmptyLines: true, dynamicTyping: true, transformHeader: (h) => h.trim(),
-}).data;
+const csv = (name, dir) => parseCsv(fs.readFileSync(path.join(dir, name), 'utf8'));
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const WORDS = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen'];
 
@@ -44,7 +42,7 @@ function facts(dir) {
     total: stats.total,
     median: asc[Math.floor(asc.length / 2)],
     averages: { cp: avg('cp'), fdu: avg('fdu'), fdd: avg('fdd'), totalFinals: avg('totalFinals') },
-    topCount: csv('topPlayers.csv', dir).length,
+    topCount: parseTopPlayers(csv('topPlayers.csv', dir)).length,
   };
 }
 
@@ -253,7 +251,7 @@ export function renderHome(dir = DATA) {
         </div>
       </div>
       <div class="grid">
-        ${card('Counts players by beast', `${owned.reduce((s, b) => s + b.n, 0)} players own one of ${owned.length} beasts. ${owned[0].name} has the most owners, ${owned[0].n}.`, 'Owners of each chaos beast', beastPiece)}
+        ${card('Counts players by beast', `${stats.chaosCount} players own a chaos beast. ${owned[0].name} has the most owners, ${owned[0].n}.`, 'Owners of each chaos beast', beastPiece)}
         ${card('Charts player power', `Half of all players hold less than ${formatCP(d.median)}. The strongest holds ${formatCP(ranked[0].cp)}.`, 'How many players sit in each combat power band', spreadPiece)}
       </div>
     </div>
@@ -320,4 +318,26 @@ export function renderHome(dir = DATA) {
     </div>
   </div>
 </footer>`;
+}
+
+/* Slips in the sheets, for the terminal and the build log: [{ file, line, message }] */
+export function checkData(dir = DATA) {
+  const [main, top] = ['players.csv', 'topPlayers.csv'].map((name) => csv(name, dir));
+  const isTier = (t) => Boolean(tribPrefix(t));
+  const out = [
+    ...checkRows(main, isTier).map((w) => ({ file: 'public/data/players.csv', ...w })),
+    ...checkRows(top, isTier).map((w) => ({ file: 'public/data/topPlayers.csv', ...w })),
+  ];
+  const byUid = new Map(parsePlayers(main).map((p) => [p.uid, p]));
+  const apart = parseTopPlayers(top).filter((t) => {
+    const p = byUid.get(t.uid);
+    return p && ['cp', 'fdu', 'fdd'].some((k) => Math.abs(p[k] - t[k]) > 0.05);
+  });
+  if (apart.length) {
+    out.push({
+      file: 'public/data/topPlayers.csv', line: 1,
+      message: `CP, FDU or FDD differ from players.csv for ${apart.length} players: ${apart.map((p) => p.player).join(', ')}`,
+    });
+  }
+  return out;
 }

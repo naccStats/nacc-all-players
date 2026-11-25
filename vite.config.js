@@ -26,6 +26,17 @@ const home = () => ({
       return html.replace('<!--home-->', () => module.renderHome());
     },
   },
+  // slips in the sheets are put right where they can be, and named here every time
+  async buildStart() {
+    const { checkData } = await import(/* @vite-ignore */ pathToFileURL(RENDER).href);
+    const found = checkData();
+    if (!found.length) return;
+    console.log(`\n[data] ${found.length} to check in public/data:`);
+    found.forEach(({ file, line, message }) => console.log(
+      // on GitHub this form lists the line on the run's summary page
+      process.env.GITHUB_ACTIONS ? `::warning file=${file},line=${line}::${message}` : `  ${file}:${line}  ${message}`
+    ));
+  },
   configureServer(server) {
     const root = server.config.root.split(sep).join('/');
     const sources = ['public/data/', 'home/', 'src/data-date.js', 'src/brand/', 'src/utils/'];

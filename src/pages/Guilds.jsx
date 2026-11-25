@@ -6,7 +6,7 @@ import { computeGuildStats } from '../utils/statsEngine';
 import { formatCP, formatStat } from '../utils/formatters';
 import { TRIB_PREFIXES, tribName, tribPrefix, tribRank } from '../utils/tribulationSystem';
 import { C, FONT, RAMP, catAxis, grid, guildAxisLabel, isNarrow, tip, tooltip, valueAxis } from '../utils/chartTheme';
-import { Bars, Card, Cp, Crest, PageHead, RowDetails, Select, Stats, Tier } from '../components/ui';
+import { Bars, Card, Cp, Crest, PageHead, RowDetails, Select, SortBar, Stats, Tier } from '../components/ui';
 import Chart from '../components/Chart';
 
 const COLUMNS = [
@@ -199,9 +199,7 @@ export default function Guilds() {
           </table>
         </div>
         <div className="rows-sm">
-          <div className="rows-sm__sort">
-            <Select label="Sort by" value={sort.key} onChange={(key) => setSort({ key, dir: 'desc' })} options={COLUMNS.map(({ key, label }) => ({ value: key, label }))} />
-          </div>
+          <SortBar sort={sort} onChange={setSort} options={COLUMNS.map(({ key, label }) => ({ value: key, label }))} />
           {rows.map((g) => (
             <RowDetails
               key={g.name}
