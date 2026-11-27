@@ -102,12 +102,12 @@ export const PlayerRows = ({ players, sortKey = 'cp' }) => {
 };
 
 /* What a column header does on a wide screen: pick the column, then the direction. */
-export const SortBar = ({ sort, onChange, options, ascending = [] }) => {
+export const SortBar = ({ sort, onChange, options, ascending = [], label = 'Sort by' }) => {
   const down = sort.dir === 'desc';
   const Arrow = down ? ArrowDown : ArrowUp;
   return (
     <div className="rows-sm__sort">
-      <Select label="Sort by" value={sort.key} onChange={(key) => onChange({ key, dir: ascending.includes(key) ? 'asc' : 'desc' })} options={options} />
+      <Select label={label} value={sort.key} onChange={(key) => onChange({ key, dir: ascending.includes(key) ? 'asc' : 'desc' })} options={options} />
       <button
         type="button"
         className="icon-btn"

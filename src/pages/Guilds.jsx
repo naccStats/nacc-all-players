@@ -93,6 +93,7 @@ const Members = ({ guild }) => (
     {[...guild.members].sort((a, b) => b.cp - a.cp).slice(0, 5).map((m) => (
       <Link key={m.uid} to={`/player/${m.uid}`}><b>{m.player}</b><span className="muted">{formatCP(m.cp)}</span><Tier trib={m.tribulation} short /></Link>
     ))}
+    <Link className="members__all link" to={`/rankings?guild=${encodeURIComponent(guild.name)}`}>All {guild.memberCount} members, ranked</Link>
   </div>
 );
 
@@ -147,7 +148,7 @@ export default function Guilds() {
         </Card>
       </div>
 
-      <Card className="card--flush" title="Guild roster" note="Open a guild to see its five strongest members">
+      <Card className="card--flush" title="Guild roster" note="Open a guild to see its five strongest members, or the whole guild ranked">
         <div className="table-wrap table-main table-main--wide" style={{ marginTop: -8 }}>
           <table>
             <thead>

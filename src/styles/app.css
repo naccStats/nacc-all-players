@@ -108,6 +108,15 @@ input[type="range"] { accent-color: var(--accent); width: 100%; min-height: 32px
 .page-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px; align-items: end; margin-bottom: 24px; }
 .page-head .asof { margin-bottom: 18px; }
 .page-head__crest { margin-bottom: 14px; }
+/* the Players list: which guild, ranked by what */
+.rankbar { display: grid; grid-template-columns: 240px 280px; gap: 16px; align-items: end; }
+.rankbar .rows-sm__sort { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; padding: 0; border: 0; }
+.filters--3 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto; }
+@media (max-width: 767px) { .filters.filters--3 { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .filters.filters--3 > .btn { grid-column: auto; padding-inline: 10px; gap: 6px; } }
+@media (max-width: 374px) { .filters.filters--3 { grid-template-columns: minmax(0, 1fr); } }
+.btn svg { flex: none; }
+th.r button { min-width: 44px; justify-content: flex-end; }
+.members__all { grid-column: 1 / -1; justify-self: start; display: inline-flex; align-items: center; min-height: 44px; }
 .page-head .lead { margin-top: 16px; max-width: 72ch; text-wrap: pretty; font-size: 18px; line-height: 1.55; color: var(--soft); }
 .cols { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--gap); }
 .cols > * { grid-column: span 12; min-width: 0; }
@@ -306,6 +315,8 @@ td.strong { color: var(--ink); font-weight: 600; }
   .page { padding-top: calc(var(--nav) + 32px); padding-bottom: 64px; }
   .page-head { grid-template-columns: minmax(0, 1fr); margin-bottom: 8px; }
   .page-head .lead { font-size: 16px; }
+  .rankbar { grid-template-columns: minmax(0, 1fr); }
+
   .filters { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 20px; }
   .filters > :first-child, .filters > .btn { grid-column: 1 / -1; }
   .filters--2 { padding: 0; }

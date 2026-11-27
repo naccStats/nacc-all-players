@@ -19,21 +19,17 @@ const COLUMNS = [
   { key: 'totalFinals', label: 'Finals', right: true },
   { key: 'chaosBeast', label: 'Beast' },
 ];
-const SORTS = [
-  { value: 'cp', label: 'Combat power' },
-  { value: 'tribulation', label: 'Tribulation' },
-  { value: 'fdu', label: 'FDU' },
-  { value: 'fdd', label: 'FDD' },
-  { value: 'totalFinals', label: 'Total Finals' },
-  { value: 'player', label: 'Name' },
-  { value: 'guild', label: 'Guild' },
-  { value: 'chaosBeast', label: 'Chaos beast' },
+/* What the list can be ranked by. Highest first; the rank is the place in this order. */
+const RANK_BY = [
+  { value: 'cp', label: 'Combat power', lead: 'Ranked by combat power', of: (p) => p.cp },
+  { value: 'totalFinals', label: 'Total Finals', lead: 'Ranked by total Finals', of: (p) => p.totalFinals },
+  { value: 'fdu', label: 'FDU', lead: 'Ranked by Finals damage up', of: (p) => p.fdu },
+  { value: 'fdd', label: 'FDD', lead: 'Ranked by Finals damage down', of: (p) => p.fdd },
+  { value: 'tribulation', label: 'Tribulation', lead: 'Ranked by tribulation, then combat power', of: (p) => tribRank(p.tribulation) },
 ];
 
-const sortValue = (p, key) => (key === 'tribulation' ? tribRank(p.tribulation) : p[key] ?? '');
-
-function exportCsv(rows) {
-  const head = ['Rank', 'Player', 'Guild', 'UID', 'CP', 'Tribulation', 'FDU', 'FDD', 'Total Finals', 'Has Chaos', 'Beast'];
+function exportCsv(rows, by) {
+  const head = [`Rank by ${by.label}`, 'Player', 'Guild', 'UID', 'CP', 'Tribulation', 'FDU', 'FDD', 'Total Finals', 'Has Chaos', 'Beast'];
   const body = rows.map((p) => [
     p.rank, p.player, p.guild, p.uid, p.cp, p.tribulation, p.fdu, p.fdd, p.totalFinals, p.hasChaos ? 'Yes' : 'No', p.chaosBeast || '',
   ]);
@@ -44,8 +40,10 @@ function exportCsv(rows) {
   URL.revokeObjectURL(url);
 }
 
-/* The three strongest players, on the game's ink painting. */
-function Podium({ players }) {
+/* The first three in the chosen order, on the game's ink painting. */
+const PODIUM_FIGURE = { fdu: ['FDU', 'fdu'], fdd: ['FDD', 'fdd'] };
+function Podium({ players, by }) {
+  const extra = PODIUM_FIGURE[by.value];
   return (
     <ol className="podium">
       {players.map((p) => (
@@ -58,7 +56,9 @@ function Podium({ players }) {
             <span className="podium__foot">
               <span><small>Combat power</small><b className="cp" dangerouslySetInnerHTML={{ __html: cpHtml(formatCP(p.cp)) }} /></span>
               <span><small>Finals</small><b>{formatStat(p.totalFinals)}</b></span>
-              <span><small>Beast</small><b><Beast player={p} /></b></span>
+              {extra
+                ? <span><small>{extra[0]}</small><b>{formatStat(p[extra[1]])}</b></span>
+                : <span><small>Beast</small><b><Beast player={p} /></b></span>}
             </span>
           </Link>
         </li>
@@ -73,31 +73,29 @@ export default function Players() {
   const { toast, ToastContainer } = useToast();
   const [params, setParams] = useSearchParams();
   const guild = params.get('guild') || 'all';
+  const by = RANK_BY.find((r) => r.value === params.get('by')) || RANK_BY[0];
+  const [dir, setDir] = useState('desc');
   const [search, setSearch] = useState('');
   const [chaos, setChaos] = useState('all');
-  const [sort, setSort] = useState({ key: 'cp', dir: 'desc' });
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(30);
 
-  const ranked = useMemo(
-    () => [...players].sort((a, b) => b.cp - a.cp).map((p, i) => ({ ...p, rank: i + 1 })),
-    [players]
-  );
-  const guilds = useMemo(() => [...new Set(players.map((p) => p.guild).filter(Boolean))].sort(), [players]);
+  const guilds = useMemo(() => [...new Set(players.map((p) => p.guild).filter(Boolean))].sort((a, b) => a.localeCompare(b)), [players]);
 
+  /* The rank is the place in the chosen order among the players in view: the region, or one guild,
+     with or without a beast. A search only narrows the list; nobody's rank changes with it. */
+  const ranked = useMemo(
+    () => players
+      .filter((p) => (guild === 'all' || p.guild === guild) && (chaos === 'all' || p.hasChaos === (chaos === 'yes')))
+      .sort((a, b) => by.of(b) - by.of(a) || b.cp - a.cp || a.player.localeCompare(b.player))
+      .map((p, i) => ({ ...p, rank: i + 1 })),
+    [players, guild, chaos, by]
+  );
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    const sign = sort.dir === 'desc' ? -1 : 1;
-    return ranked
-      .filter((p) =>
-        (!q || p.player.toLowerCase().includes(q) || p.guild.toLowerCase().includes(q) || p.uid.includes(q)) &&
-        (guild === 'all' || p.guild === guild) &&
-        (chaos === 'all' || p.hasChaos === (chaos === 'yes')))
-      .sort((a, b) => {
-        const [x, y] = [sortValue(a, sort.key), sortValue(b, sort.key)];
-        return typeof x === 'string' ? sign * String(x).localeCompare(String(y)) : sign * (x - y);
-      });
-  }, [ranked, search, guild, chaos, sort]);
+    const list = q ? ranked.filter((p) => p.player.toLowerCase().includes(q) || p.uid.includes(q)) : ranked;
+    return dir === 'desc' ? list : [...list].reverse();
+  }, [ranked, search, dir]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / perPage));
   const at = Math.min(page, pages);
@@ -108,19 +106,35 @@ export default function Players() {
   const numbers = Array.from({ length: Math.min(5, pages) }, (_, i) => first + i);
 
   const change = (fn) => (v) => { fn(v); setPage(1); };
-  const setGuild = change((v) => setParams(v === 'all' ? {} : { guild: v }, { replace: true }));
-  const sortBy = change((key) =>
-    setSort((s) => (s.key === key ? { key, dir: s.dir === 'desc' ? 'asc' : 'desc' } : { key, dir: key === 'player' || key === 'guild' ? 'asc' : 'desc' })));
-  const clear = () => { setSearch(''); setChaos('all'); setGuild('all'); };
+  const setParam = (k, v, empty) => setParams((p) => {
+    const next = new URLSearchParams(p);
+    if (v === empty) next.delete(k); else next.set(k, v);
+    return next;
+  }, { replace: true });
+  const setGuild = change((v) => setParam('guild', v, 'all'));
+  const setBy = change((v) => setParam('by', v, RANK_BY[0].value));
+  const rankBy = change(({ key, dir: d }) => { setBy(key); setDir(d); });
+  /* a column header ranks by its column; a second press turns the order round */
+  const pressColumn = (key) => (key === by.value ? change(setDir)(dir === 'desc' ? 'asc' : 'desc') : rankBy({ key, dir: 'desc' }));
+  const clear = () => { setSearch(''); change(setChaos)('all'); };
 
+  const scope = guild === 'all' ? 'every tracked player' : `the ${ranked.length} members of ${guild}`;
   return (
     <>
-      <PageHead title="Players" lead="Every tracked player. Sort or filter the list, or open a player for the full record." />
-      <Podium players={ranked.slice(0, 3)} />
-      <section className="card card--flush">
-        <div className="filters">
-          <Field label="Name, guild or UID" type="search" value={search} onChange={(e) => change(setSearch)(e.target.value)} />
+      <PageHead
+        title={guild === 'all' ? 'Players' : guild}
+        crest={guild === 'all' ? undefined : guild}
+        lead={`${by.lead} among ${scope}${chaos === 'all' ? '' : chaos === 'yes' ? ' with a chaos beast' : ' with no chaos beast'}. Open a player for the full record.`}
+      >
+        <div className="rankbar">
           <Select label="Guild" value={guild} onChange={setGuild} options={[{ value: 'all', label: 'All guilds' }, ...guilds.map((g) => ({ value: g, label: g }))]} />
+          <SortBar label="Rank by" sort={{ key: by.value, dir }} onChange={rankBy} options={RANK_BY} />
+        </div>
+      </PageHead>
+      {ranked.length > 0 && <Podium players={ranked.slice(0, 3)} by={by} />}
+      <section className="card card--flush">
+        <div className="filters filters--3">
+          <Field label="Name or UID" type="search" value={search} onChange={(e) => change(setSearch)(e.target.value)} />
           <Select
             label="Chaos beast"
             value={chaos}
@@ -130,7 +144,7 @@ export default function Players() {
           <button
             type="button"
             className="btn btn--secondary"
-            onClick={() => { exportCsv(filtered); toast(`Saved ${filtered.length} players to nacc-players.csv`); }}
+            onClick={() => { exportCsv(filtered, by); toast(`Saved ${filtered.length} players to nacc-players.csv`); }}
           >
             <Download size={16} aria-hidden="true" />Download CSV
           </button>
@@ -139,7 +153,7 @@ export default function Players() {
         {rows.length === 0 ? (
           <Empty title="No players match">
             <p>Try a shorter name, or another guild.</p>
-            <button type="button" className="btn btn--secondary" onClick={clear}>Clear filters</button>
+            <button type="button" className="btn btn--secondary" onClick={clear}>Clear the search</button>
           </Empty>
         ) : (
           <>
@@ -147,13 +161,15 @@ export default function Players() {
               <table>
                 <thead>
                   <tr>
-                    <th className="rank">Rank</th>
+                    <th className="rank" title={`Rank by ${by.label}`}>Rank</th>
                     {COLUMNS.map(({ key, label, right, wide, title }) => {
-                      const on = sort.key === key;
-                      const Arrow = sort.dir === 'desc' ? ArrowDown : ArrowUp;
+                      const cls = cx(right && 'r', wide && 'wide-lg') || undefined;
+                      if (!RANK_BY.some((r) => r.value === key)) return <th key={key} className={cls}>{label}</th>;
+                      const on = by.value === key;
+                      const Arrow = dir === 'desc' ? ArrowDown : ArrowUp;
                       return (
-                        <th key={key} className={cx(right && 'r', wide && 'wide-lg') || undefined} aria-sort={on ? (sort.dir === 'desc' ? 'descending' : 'ascending') : undefined}>
-                          <button type="button" title={title} onClick={() => sortBy(key)}>{label}{on && <Arrow size={14} aria-hidden="true" />}</button>
+                        <th key={key} className={cls} aria-sort={on ? (dir === 'desc' ? 'descending' : 'ascending') : undefined}>
+                          <button type="button" title={title ? `${title}: rank by it` : `Rank by ${label}`} onClick={() => pressColumn(key)}>{label}{on && <Arrow size={14} aria-hidden="true" />}</button>
                         </th>
                       );
                     })}
@@ -178,8 +194,7 @@ export default function Players() {
             </div>
 
             <div className="rows-sm">
-              <SortBar sort={sort} onChange={change(setSort)} options={SORTS} ascending={['player', 'guild']} />
-              <PlayerRows players={rows} sortKey={sort.key} />
+              <PlayerRows players={rows} sortKey={by.value} />
             </div>
           </>
         )}
